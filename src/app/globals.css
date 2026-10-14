@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* PANTAKER brand tokens — single source of truth */
+  --color-primary: #174d3b;
+  --color-primary-hover: #123e30;
+  --color-primary-active: #0e3327;
+  --color-primary-accent: #2fa66a;
+  --color-primary-accent-hover: #278a58;
+  --color-background: #f7f5ef;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #faf9f5;
+  --color-text: #202723;
+  --color-text-muted: #69736d;
+  --color-border: #e4e8e4;
+  --color-border-strong: #cdd5cd;
+  --color-accent-warm: #e4ddcf;
+  --color-accent-warm-soft: #f1ece0;
+  --color-error: #a4262c;
+  --color-error-bg: #fbecec;
+  --color-warning: #92600a;
+  --color-warning-bg: #fdf3dd;
+  --color-success: #1e7a4c;
+  --color-success-bg: #e8f5ee;
+  --color-focus: #2fa66a;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-card: 0 1px 2px rgb(32 39 35 / 0.06), 0 1px 3px rgb(32 39 35 / 0.08);
+  --shadow-pop: 0 8px 28px rgb(23 77 59 / 0.16);
+
+  --font-sans: "Inter", "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --space-section: clamp(3rem, 6vw, 5rem);
+
+  /* ── Shop design language (DESIGN.md). Exact system tokens.
+     Single saturated accent: Shop violet. No green on the surface. */
+  --shop-canvas: #f2f4f5;
+  --shop-border-faint: #ebebeb;
+  --shop-muted: #787574;
+  --shop-ink: #000000;
+  --shop-violet: #5433eb;
+  --shop-violet-wash: #c0b5f3;
+  --shop-radius-card: 28px;
+  --shop-radius-pill: 9999px;
+  --shop-shadow-card: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+  --shop-shadow-pill: rgba(0, 0, 0, 0.06) 0px 2px 8px 0px;
+  --shop-shadow-accent: rgba(69, 36, 219, 0.34) 0px 4px 24px 0px;
+  --shop-shadow-rail: rgba(0, 0, 0, 0.12) 0px 4px 24px 0px;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--shop-canvas);
+  color: var(--shop-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  /* Shop floating-card signature: 28px radius, white, dual soft shadow, no border */
+  .shop-card {
+    background: #ffffff;
+    border-radius: var(--shop-radius-card);
+    box-shadow: var(--shop-shadow-card);
+  }
+  /* Editorial serif for brand overlay type (Playfair Display, Georgia fallback) */
+  .font-brand-serif {
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  }
+  /* Brand-accent button glow (forest plays the Shop-violet role) */
+  .shop-accent-btn {
+    box-shadow: var(--shop-shadow-accent);
+  }
+  .shop-pill-shadow {
+    box-shadow: var(--shop-shadow-pill);
+  }
+  .container-brand {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em];
+    color: var(--color-primary);
+  }
+  .input-brand {
+    @apply w-full rounded-md border bg-white px-3 py-2.5 text-sm outline-none transition;
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+  }
+  .input-brand::placeholder {
+    color: var(--color-text-muted);
+  }
+  .input-brand:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgb(47 166 106 / 0.18);
+  }
+  .input-brand[aria-invalid="true"] {
+    border-color: var(--color-error);
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition;
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--color-primary-hover);
+  }
+  .btn-primary:active {
+    background: var(--color-primary-active);
+  }
+  .btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border bg-white px-5 py-2.5 text-sm font-semibold transition;
+    border-color: var(--color-border-strong);
+    color: var(--color-primary);
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-primary);
+    background: var(--color-surface-subtle);
+  }
+  .badge-condition {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium;
+  }
+}
