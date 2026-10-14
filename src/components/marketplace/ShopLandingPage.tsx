@@ -423,7 +423,7 @@ export function ShopLandingPage({ initialItems, categories, isLive }: ShopLandin
           </div>
 
           {/* Categories row - centered relative to the hero banner */}
-          <nav
+          {/* <nav
             id="departments"
             ref={departmentsRef}
             aria-label="Departments"
@@ -431,9 +431,9 @@ export function ShopLandingPage({ initialItems, categories, isLive }: ShopLandin
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            className="scrollbar-none relative mt-5 flex w-full cursor-grab items-center overflow-x-auto py-2 select-none active:cursor-grabbing"
+            className="scrollbar-none relative -mx-4 mt-5 flex w-[calc(100%+2rem)] cursor-grab items-center overflow-x-auto py-2 select-none active:cursor-grabbing sm:mx-0 sm:w-full"
           >
-            <div className="flex min-w-full w-max items-center justify-start gap-5 px-4 sm:justify-center sm:gap-7 sm:px-6">
+            <div className="flex min-w-full w-max items-center justify-start gap-5 pl-4 pr-0 sm:justify-center sm:gap-7 sm:pl-6 sm:pr-0">
               {categories.slice(0, 4).map((c, i) => {
                 const Icon = CATEGORY_ICONS[c.slug] ?? PackageIcon;
                 const tone = CHIP_TONES[i % CHIP_TONES.length];
@@ -474,8 +474,70 @@ export function ShopLandingPage({ initialItems, categories, isLive }: ShopLandin
               >
                 <GridIcon className="h-5 w-5" aria-hidden="true" />
               </button>
+              <span aria-hidden="true" className="block h-1 w-1 shrink-0 sm:w-6" />
             </div>
-          </nav>
+          </nav> */}
+
+          <nav
+  id="departments"
+  ref={departmentsRef}
+  aria-label="Departments"
+  onMouseDown={handleMouseDown}
+  onMouseMove={handleMouseMove}
+  onMouseUp={handleMouseUp}
+  onMouseLeave={handleMouseUp}
+  className="scrollbar-none relative -mx-4 mt-5 flex w-[calc(100%+2rem)] cursor-grab items-center overflow-x-auto py-2 select-none active:cursor-grabbing sm:mx-0 sm:w-full"
+>
+  {/* Symmetric padding: centered when it fits, scrolls from the left when it overflows */}
+  <div className="flex w-max min-w-full shrink-0 items-center justify-center gap-5 px-4 sm:gap-7 sm:px-0">
+    {categories.slice(0, 4).map((c, i) => {
+      const Icon = CATEGORY_ICONS[c.slug] ?? PackageIcon;
+      const tone = CHIP_TONES[i % CHIP_TONES.length];
+      const isActive = selectedCategory.toLowerCase() === c.slug.toLowerCase();
+      return (
+        <button
+          key={c.slug}
+          type="button"
+          onClick={() => {
+            if (hasMovedRef.current) return;
+            pickDepartment(c.slug);
+          }}
+          aria-pressed={isActive}
+          className="flex shrink-0 items-center gap-2 whitespace-nowrap transition-opacity hover:opacity-80"
+        >
+          <span
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full shadow-sm"
+            style={{ backgroundColor: tone }}
+          >
+            <Icon className="h-[17px] w-[17px] text-white" aria-hidden="true" />
+          </span>
+          <span
+            className={`text-[13px] ${
+              isActive
+                ? "font-bold text-[#000000] underline underline-offset-4"
+                : "font-medium text-[#000000]"
+            }`}
+          >
+            {c.name}
+          </span>
+        </button>
+      );
+    })}
+    <button
+      type="button"
+      onClick={() => {
+        if (hasMovedRef.current) return;
+        setSelectedCategory("all");
+        setSearchQuery("");
+        scrollToId("feed");
+      }}
+      aria-label="Clear department filter"
+      className="flex shrink-0 items-center justify-center rounded-full text-[#787574] transition-colors hover:text-[#000000]"
+    >
+      <GridIcon className="h-5 w-5" aria-hidden="true" />
+    </button>
+  </div>
+</nav>
         </header>
 
         {/* 3. HERO SHOWCASE BANNER */}
