@@ -1,13 +1,36 @@
 import { createClient } from "@/lib/supabase/server";
-import { SAMPLE_CATEGORIES, SAMPLE_LISTINGS } from "@/lib/sample-data";
+import { SAMPLE_CATEGORIES, SAMPLE_LISTINGS, SAMPLE_PRODUCT_GROUPS } from "@/lib/sample-data";
 import type { MarketplaceFilters } from "@/lib/validation/listings";
 import type { CardListing } from "@/components/marketplace/ListingCard";
 import { paginationDefaults } from "@/config/site";
+import { deliveryUrl, isCloudflareImagesConfigured } from "@/lib/cloudflare-images";
+
+/** Cover image URL for a listing, from its lowest sort_order image id. */
+function coverImageUrl(rows: unknown): string | undefined {
+  if (!isCloudflareImagesConfigured() || !Array.isArray(rows) || rows.length === 0) {
+    return undefined;
+  }
+  const sorted = [...(rows as Array<{ storage_path?: string; sort_order?: number }>)].sort(
+    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
+  const path = sorted[0]?.storage_path;
+  if (typeof path !== "string" || !path) return undefined;
+  try {
+    return deliveryUrl(path);
+  } catch {
+    return undefined;
+  }
+}
 
 /** Resolve a category slug to its display name (sample data). */
 function sampleCategoryName(slug: string): string | null {
   const found = SAMPLE_CATEGORIES.find((c) => c.slug.toLowerCase() === slug.toLowerCase());
   return found ? (found.name as string) : null;
+}
+
+/** Product groups defined for a sample category slug. Empty in live mode. */
+export function sampleProductGroups(categorySlug: string) {
+  return SAMPLE_PRODUCT_GROUPS[categorySlug.toLowerCase()] ?? [];
 }
 
 function sampleToCards(filters: MarketplaceFilters): { items: CardListing[]; total: number } {
@@ -20,14 +43,21 @@ function sampleToCards(filters: MarketplaceFilters): { items: CardListing[]; tot
     city: s.city,
     area: s.area,
     category: s.category,
+    group: s.group,
     image: s.image,
     created_at: s.created_at,
   }));
   if (filters.q) {
     const q = filters.q.toLowerCase();
-    items = items.filter((i) => i.title.toLowerCase().includes(q));
+    items = items.filter(
+      (i) =>
+        i.title.toLowerCase().includes(q) ||
+        i.category?.toLowerCase().includes(q) ||
+        i.area?.toLowerCase().includes(q),
+    );
   }
   if (filters.condition) items = items.filter((i) => i.condition === filters.condition);
+  if (filters.pricing) items = items.filter((i) => i.pricing_type === filters.pricing);
   if (filters.category) {
     const name = sampleCategoryName(filters.category);
     items = items.filter((i) =>
@@ -36,11 +66,21 @@ function sampleToCards(filters: MarketplaceFilters): { items: CardListing[]; tot
         : i.category?.toLowerCase() === filters.category.toLowerCase(),
     );
   }
+  if (filters.group) items = items.filter((i) => i.group === filters.group);
+  if (filters.area) items = items.filter((i) => i.area === filters.area);
   if (filters.minPrice != null) items = items.filter((i) => (i.price ?? 0) >= filters.minPrice!);
   if (filters.maxPrice != null) items = items.filter((i) => (i.price ?? Infinity) <= filters.maxPrice!);
   if (filters.sort === "price_asc") items.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
   else if (filters.sort === "price_desc") items.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-  return { items, total: items.length };
+  else
+    items.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+
+  const total = items.length;
+  const pageSize = paginationDefaults.marketplacePageSize;
+  const from = (filters.page - 1) * pageSize;
+  return { items: items.slice(from, from + pageSize), total };
 }
 
 export async function searchListings(filters: MarketplaceFilters): Promise<{
@@ -74,7 +114,9 @@ export async function searchListings(filters: MarketplaceFilters): Promise<{
   if (filters.q) query = query.textSearch("title", filters.q, { type: "websearch" });
   if (filters.category) query = query.eq("categories.slug", filters.category.toLowerCase());
   if (filters.condition) query = query.eq("condition", filters.condition);
+  if (filters.pricing) query = query.eq("pricing_type", filters.pricing);
   if (filters.city) query = query.ilike("city", `%${filters.city}%`);
+  if (filters.area) query = query.eq("area", filters.area);
   if (filters.minPrice != null) query = query.gte("price", filters.minPrice);
   if (filters.maxPrice != null) query = query.lte("price", filters.maxPrice);
 
@@ -93,7 +135,7 @@ export async function searchListings(filters: MarketplaceFilters): Promise<{
       city: row["city"] as string,
       area: row["area"] as string | null,
       category: (row["categories"] as { name?: string } | null)?.name,
-      image: undefined,
+      image: coverImageUrl(row["listing_images"]),
       created_at: row["created_at"] as string,
     })),
   };
@@ -102,12 +144,17 @@ export async function searchListings(filters: MarketplaceFilters): Promise<{
 export async function getCategories() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     const { SAMPLE_CATEGORIES } = await import("@/lib/sample-data");
-    return SAMPLE_CATEGORIES.map((c) => ({ ...c, live: false }));
+    return SAMPLE_CATEGORIES.map((c, i) => ({
+      id: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+      ...c,
+      count: c.count,
+      live: false,
+    }));
   }
   const supabase = await createClient();
   const { data } = await supabase
     .from("categories")
-    .select("name,slug,description")
+    .select("id,name,slug,description")
     .eq("is_active", true)
     .order("sort_order");
   return (data ?? []).map((c) => ({ ...c, count: "", live: true }));

@@ -2,7 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createListingSchema, inquirySchema, reportSchema } from "@/lib/validation/listings";
+import {
+  createListingSchema,
+  inquirySchema,
+  listingImageIdsSchema,
+  reportSchema,
+} from "@/lib/validation/listings";
 import { uploadLimits } from "@/config/site";
 
 function isConfigured() {
@@ -29,7 +34,8 @@ export async function createListingAction(formData: FormData) {
     title: formData.get("title"),
     category_id: formData.get("category_id"),
     description: formData.get("description"),
-    condition: formData.get("condition"),
+    // Seller picks the condition; default to scrap if omitted.
+    condition: formData.get("condition") || "scrap",
     pricing_type: formData.get("pricing_type"),
     price: formData.get("price") || null,
     negotiable: formData.get("negotiable") === "on",
@@ -42,6 +48,27 @@ export async function createListingAction(formData: FormData) {
 
   if (!parsed.success) {
     return { ok: false as const, errors: parsed.error.flatten().fieldErrors };
+  }
+
+  // Photos are uploaded straight to Cloudflare from the browser; here we only
+  // receive the ordered list of image ids (first is the cover).
+  let imageIds: string[] = [];
+  const rawImageIds = formData.get("image_ids");
+  if (typeof rawImageIds === "string" && rawImageIds.trim()) {
+    let decoded: unknown;
+    try {
+      decoded = JSON.parse(rawImageIds);
+    } catch {
+      return { ok: false as const, errors: { _form: ["We could not read the uploaded photos. Please re-add them."] } };
+    }
+    const imagesParsed = listingImageIdsSchema.safeParse(decoded);
+    if (!imagesParsed.success) {
+      return {
+        ok: false as const,
+        errors: { image_ids: imagesParsed.error.issues.map((issue) => issue.message) },
+      };
+    }
+    imageIds = imagesParsed.data;
   }
 
   const slugBase = parsed.data.title
@@ -65,35 +92,30 @@ export async function createListingAction(formData: FormData) {
 
   if (error || !data) return { ok: false as const, errors: { _form: ["Could not save listing. Try again."] } };
 
-  // Image uploads are handled client-side to the seller's own storage prefix
-  // with server validation of type/size; metadata rows reference listing.
-  return { ok: true as const, id: (data as { id: string }).id };
-}
+  const listingId = (data as { id: string }).id;
 
-export async function toggleFavoriteAction(listingId: string) {
-  // Landing-only app: without a backend the save is a session-local shortlist.
-  // With Supabase configured this persists to the user's favorites.
-  if (!isConfigured()) return { saved: true };
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  // Persist image rows. If this fails, roll the listing back so we never leave
+  // a listing without its photos.
+  if (imageIds.length > 0) {
+    const { error: imageError } = await supabase.from("listing_images").insert(
+      imageIds.map((storagePath, index) => ({
+        listing_id: listingId,
+        storage_path: storagePath,
+        sort_order: index,
+        alt_text: parsed.data.title,
+      })),
+    );
 
-  const { data: existing } = await supabase
-    .from("favorites")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("listing_id", listingId)
-    .maybeSingle();
-
-  if (existing) {
-    await supabase.from("favorites").delete().eq("id", (existing as { id: string }).id);
-    return { saved: false };
+    if (imageError) {
+      await supabase.from("listings").delete().eq("id", listingId).eq("seller_id", user.id);
+      return {
+        ok: false as const,
+        errors: { _form: ["We couldn't attach your photos, so nothing was posted. Please try again."] },
+      };
+    }
   }
-  const { error } = await supabase.from("favorites").insert({ user_id: user.id, listing_id: listingId });
-  if (error) throw new Error("Could not save listing.");
-  return { saved: true };
+
+  return { ok: true as const, id: listingId };
 }
 
 export async function sendInquiryAction(listingId: string, sellerId: string, message: string) {

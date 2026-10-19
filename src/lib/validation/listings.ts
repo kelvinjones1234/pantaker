@@ -1,13 +1,26 @@
 import { z } from "zod";
+import { uploadLimits } from "@/config/site";
 
 export const conditionSchema = z.enum([
   "working",
+  "partially_usable",
   "used",
   "damaged",
   "for_parts",
   "scrap",
   "unclassified",
 ]);
+
+/** Cloudflare Images ids: URL-safe, 1–64 chars. */
+export const cloudflareImageIdSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9_-]{1,64}$/, "One of the uploaded photos is invalid.");
+
+/** Ordered list of uploaded image ids (first is the cover). Optional. */
+export const listingImageIdsSchema = z
+  .array(cloudflareImageIdSchema)
+  .max(uploadLimits.maxImages, `You can add up to ${uploadLimits.maxImages} photos.`);
 
 export const pricingTypeSchema = z.enum(["fixed", "negotiable", "free", "offer"]);
 
@@ -73,8 +86,11 @@ export const profileSchema = z.object({
 export const marketplaceFilterSchema = z.object({
   q: z.string().max(120).optional().default(""),
   category: z.string().max(80).optional().default(""),
+  group: z.string().max(80).optional().default(""),
   condition: z.string().max(40).optional().default(""),
+  pricing: z.enum(["fixed", "negotiable", "free", "offer"]).optional(),
   city: z.string().max(80).optional().default(""),
+  area: z.string().max(120).optional().default(""),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
   sort: z.enum(["newest", "price_asc", "price_desc"]).optional().default("newest"),

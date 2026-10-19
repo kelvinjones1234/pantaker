@@ -1,5 +1,6 @@
 export type Condition =
   | "working"
+  | "partially_usable"
   | "used"
   | "damaged"
   | "for_parts"
@@ -89,6 +90,7 @@ export interface Inquiry {
 
 export const CONDITION_LABELS: Record<Condition, string> = {
   working: "Working",
+  partially_usable: "Partially usable",
   used: "Used",
   damaged: "Damaged",
   for_parts: "For parts",

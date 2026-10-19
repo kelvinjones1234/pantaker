@@ -3,55 +3,189 @@
 @tailwind utilities;
 
 :root {
-  /* PANTAKER brand tokens — single source of truth */
-  --color-primary: #174d3b;
-  --color-primary-hover: #123e30;
-  --color-primary-active: #0e3327;
-  --color-primary-accent: #2fa66a;
-  --color-primary-accent-hover: #278a58;
-  --color-background: #f7f5ef;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #faf9f5;
-  --color-text: #202723;
-  --color-text-muted: #69736d;
-  --color-border: #e4e8e4;
-  --color-border-strong: #cdd5cd;
-  --color-accent-warm: #e4ddcf;
-  --color-accent-warm-soft: #f1ece0;
+  /* Colors */
+  --color-canvas-mist: #f2f4f5;
+  --color-pure-white: #ffffff;
+  --color-ink-black: #000000;
+  --color-faint-border: #ebebeb;
+  --color-muted-gray: #787574;
+  --color-cool-stone: #cccccc;
+  --color-warm-fog: #acb0aa;
+  --color-shop-violet: #5433eb;
+  --color-violet-wash: #c0b5f3;
+  --color-slate-ink: #332f2d;
+  --color-ash-veil: #665a54;
+  --color-sage: #6f735f;
+  --color-stone-warm: #605e5d;
+
+  /* Icon accent — sage, not violet. Single use: duotone icon details. */
+  --color-icon-accent: var(--color-sage);
+  --color-icon-accent-soft: rgba(111, 115, 95, 0.1);
+  --color-icon-accent-ring: rgba(111, 115, 95, 0.15);
+
+  /* Translucent brand + focus rings */
+  --color-primary-ring: rgba(84, 51, 235, 0.15);
+  --color-focus-ring: rgba(84, 51, 235, 0.18);
+
+  /* Translucent ink / canvas steps (replaces black/white slash utilities) */
+  --color-ink-30: rgba(0, 0, 0, 0.3);
+  --color-ink-20: rgba(0, 0, 0, 0.2);
+  --color-ink-10: rgba(0, 0, 0, 0.1);
+  --color-ink-06: rgba(0, 0, 0, 0.06);
+  --color-canvas-60: rgba(242, 244, 245, 0.6);
+
+  /* Dark-photo overlays (replaces bg-black/*) */
+  --overlay-ink-60: rgba(0, 0, 0, 0.6);
+  --overlay-ink-55: rgba(0, 0, 0, 0.55);
+  --overlay-ink-45: rgba(0, 0, 0, 0.45);
+  --overlay-ink-40: rgba(0, 0, 0, 0.4);
+
+  /* Light overlays (replaces bg-white/*, border-white/*) */
+  --overlay-paper-95: rgba(255, 255, 255, 0.95);
+  --overlay-paper-90: rgba(255, 255, 255, 0.9);
+  --overlay-paper-40: rgba(255, 255, 255, 0.4);
+  --overlay-paper-10: rgba(255, 255, 255, 0.1);
+  --overlay-paper-border-20: rgba(255, 255, 255, 0.2);
+  --overlay-paper-border-10: rgba(255, 255, 255, 0.1);
+
+  /* On-dark text steps (replaces text-white/*) */
+  --ink-on-dark-95: rgba(255, 255, 255, 0.95);
+  --ink-on-dark-90: rgba(255, 255, 255, 0.9);
+  --ink-on-dark-85: rgba(255, 255, 255, 0.85);
+  --ink-on-dark-70: rgba(255, 255, 255, 0.7);
+
+  /* Typography — Font Families */
+  --font-gt-standard: 'GT Standard', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-shopify-sans: 'Shopify Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Typography — Scale */
+  --text-caption: 11px;
+  --leading-caption: 1.33;
+  --text-body-sm: 12px;
+  --leading-body-sm: 1.33;
+  --text-body: 14px;
+  --leading-body: 1.33;
+  --text-body-lg: 16px;
+  --leading-body-lg: 1.33;
+
+  /* Typography — Weights */
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-6: 6px;
+  --spacing-8: 8px;
+  --spacing-10: 10px;
+  --spacing-11: 11px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-38: 38px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-64: 64px;
+
+  /* Layout */
+  --page-max-width: 1200px;
+  --section-gap: 64px;
+  --card-padding: 0px;
+  --element-gap: 12px;
+
+  /* Border Radius */
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 11.4046px;
+  --radius-2xl: 17.1064px;
+  --radius-2xl-2: 20px;
+  --radius-2xl-3: 22.8092px;
+  --radius-3xl: 28px;
+  --radius-3xl-2: 32px;
+  --radius-full: 9999px;
+
+  /* Named Radii */
+  --radius-cards: 28px;
+  --radius-chips: 9999px;
+  --radius-pills: 20px;
+  --radius-inputs: 9999px;
+  --radius-search: 9999px;
+  --radius-buttons: 9999px;
+
+  /* Shadows — flat: cards & surfaces carry no elevation */
+  --shadow-sm: none;
+  --shadow-sm-2: none;
+  --shadow-lg: none;
+  --shadow-lg-2: none;
+
+  /* Surfaces */
+  --surface-canvas: #f2f4f5;
+  --surface-surface: #ffffff;
+  --surface-elevated-card: #ffffff;
+  --surface-accent-product-image: #000000;
+
+  /* Semantic brand tokens mapped to DESIGN.md tokens */
+  --color-primary: var(--color-shop-violet);
+  --color-primary-hover: #4324d1;
+  --color-primary-active: #371cb5;
+  --color-primary-tint: #ebe7fc;
+  --color-primary-accent: var(--color-shop-violet);
+  --color-primary-accent-hover: #4324d1;
+  --color-background: var(--surface-canvas);
+  --color-surface: var(--surface-surface);
+  --color-surface-subtle: var(--color-canvas-mist);
+  --color-text: var(--color-ink-black);
+  --color-text-muted: var(--color-muted-gray);
+  --color-border: var(--color-faint-border);
+  --color-border-strong: var(--color-cool-stone);
+  --color-accent-warm: var(--color-warm-fog);
+  --color-accent-warm-soft: var(--color-canvas-mist);
   --color-error: #a4262c;
   --color-error-bg: #fbecec;
   --color-warning: #92600a;
   --color-warning-bg: #fdf3dd;
-  --color-success: #1e7a4c;
+  --color-success: #2f7a4f;
   --color-success-bg: #e8f5ee;
-  --color-focus: #2fa66a;
+  --color-focus: var(--color-shop-violet);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: var(--radius-md);
 
-  --shadow-card: 0 1px 2px rgb(32 39 35 / 0.06), 0 1px 3px rgb(32 39 35 / 0.08);
-  --shadow-pop: 0 8px 28px rgb(23 77 59 / 0.16);
+  --shadow-card: none;
+  --shadow-pop: none;
 
-  --font-sans: "Inter", "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Fonts: Inter (UI/body) + Fraunces (display).
+     --font-inter and --font-fraunces are set by next/font in layout.tsx. */
+  --font-sans: var(--font-inter), var(--font-gt-standard);
+  --font-serif: var(--font-fraunces), "Fraunces", Georgia, "Times New Roman", serif;
+  --font-brand-serif: var(--font-serif);
 
-  --space-section: clamp(3rem, 6vw, 5rem);
+  --space-section: var(--section-gap);
 
-  /* ── Shop design language (DESIGN.md). Exact system tokens.
-     Single saturated accent: Shop violet. No green on the surface. */
-  --shop-canvas: #f2f4f5;
-  --shop-border-faint: #ebebeb;
-  --shop-muted: #787574;
-  --shop-ink: #000000;
-  --shop-violet: #5433eb;
-  --shop-violet-wash: #c0b5f3;
-  --shop-radius-card: 28px;
-  --shop-radius-pill: 9999px;
-  --shop-shadow-card: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
-  --shop-shadow-pill: rgba(0, 0, 0, 0.06) 0px 2px 8px 0px;
-  --shop-shadow-accent: rgba(69, 36, 219, 0.34) 0px 4px 24px 0px;
-  --shop-shadow-rail: rgba(0, 0, 0, 0.12) 0px 4px 24px 0px;
+  /* Shop design language. Single saturated accent: Shop violet. */
+  --shop-canvas: var(--surface-canvas);
+  --shop-canvas-deep: #e5e8ea;
+  --shop-border-faint: var(--color-faint-border);
+  --shop-muted: var(--color-muted-gray);
+  --shop-ink: var(--color-ink-black);
+  --shop-cream: #f4f1ea;
+  --shop-warm-dark: var(--color-slate-ink);
+  --shop-glass: rgba(255, 255, 255, 0.72);
+  --shop-glass-border: rgba(255, 255, 255, 0.35);
+  --shop-glass-dark: rgba(0, 0, 0, 0.42);
+  --shop-accent: var(--color-shop-violet);
+  --shop-accent-wash: var(--color-violet-wash);
+  --shop-icon-accent: var(--color-sage);
+  --shop-radius-card: var(--radius-cards);
+  --shop-radius-pill: var(--radius-chips);
+  --shop-shadow-card: none;
+  --shop-shadow-pill: none;
+  --shop-shadow-accent: none;
+  --shop-shadow-rail: none;
+
+  /* Legacy aliases so existing references keep working */
+  --shop-violet: var(--color-shop-violet);
+  --shop-violet-wash: var(--color-violet-wash);
 }
 
 * {
@@ -63,11 +197,17 @@ html {
 }
 
 body {
-  background: var(--shop-canvas);
-  color: var(--shop-ink);
+  background: var(--surface-canvas);
+  color: var(--color-ink-black);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Aligned digits for prices (₦ amounts) */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {
@@ -78,7 +218,12 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  border-radius: 4px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -99,22 +244,39 @@ body {
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
-  /* Shop floating-card signature: 28px radius, white, dual soft shadow, no border */
+  /* Shop floating-card signature: 28px radius, white, flat, no border */
   .shop-card {
-    background: #ffffff;
-    border-radius: var(--shop-radius-card);
-    box-shadow: var(--shop-shadow-card);
+    background: var(--surface-surface);
+    border-radius: var(--radius-cards);
+    box-shadow: none;
   }
-  /* Editorial serif for brand overlay type (Playfair Display, Georgia fallback) */
+  /* Editorial serif for display type: Fraunces, Georgia fallback */
   .font-brand-serif {
-    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    font-family: var(--font-serif);
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
   }
-  /* Brand-accent button glow (forest plays the Shop-violet role) */
+  /* Brand-accent button — flat, no glow */
   .shop-accent-btn {
-    box-shadow: var(--shop-shadow-accent);
+    box-shadow: none;
   }
   .shop-pill-shadow {
-    box-shadow: var(--shop-shadow-pill);
+    box-shadow: none;
+  }
+  /* Frosted pills like the Shop store pages: light glass on mist canvas, dark glass on photos */
+  .shop-glass {
+    background: var(--shop-glass);
+    border: 1px solid var(--shop-glass-border);
+    color: var(--color-ink-black);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  .shop-glass-dark {
+    background: var(--shop-glass-dark);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--shop-cream);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
   }
   .container-brand {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
@@ -123,7 +285,7 @@ body {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
+    box-shadow: none;
   }
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.14em];
@@ -139,7 +301,7 @@ body {
   }
   .input-brand:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgb(47 166 106 / 0.18);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
   }
   .input-brand[aria-invalid="true"] {
     border-color: var(--color-error);
@@ -166,7 +328,7 @@ body {
   }
   .btn-secondary:hover {
     border-color: var(--color-primary);
-    background: var(--color-surface-subtle);
+    background: var(--color-primary-tint);
   }
   .badge-condition {
     @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium;

@@ -4,12 +4,13 @@ import { CONDITION_LABELS, type Condition } from "@/types/marketplace";
 /** Neutral Shop-system pills: white, hairline border, ink text.
  *  The single violet accent is reserved for actions, never status. */
 const styles: Record<Condition, string> = {
-  working: "bg-white text-[#000000] border-[#ebebeb]",
-  used: "bg-white text-[#000000] border-[#ebebeb]",
-  damaged: "bg-white text-[#000000] border-[#ebebeb]",
-  for_parts: "bg-white text-[#000000] border-[#ebebeb]",
-  scrap: "bg-white text-[#000000] border-[#ebebeb]",
-  unclassified: "bg-white text-[#787574] border-[#ebebeb]",
+  working: "bg-[var(--color-pure-white)] text-[var(--color-ink-black)] border-[var(--color-faint-border)]",
+  partially_usable: "bg-[var(--color-pure-white)] text-[var(--color-ink-black)] border-[var(--color-faint-border)]",
+  used: "bg-[var(--color-pure-white)] text-[var(--color-ink-black)] border-[var(--color-faint-border)]",
+  damaged: "bg-[var(--color-pure-white)] text-[var(--color-ink-black)] border-[var(--color-faint-border)]",
+  for_parts: "bg-[var(--color-pure-white)] text-[var(--color-ink-black)] border-[var(--color-faint-border)]",
+  scrap: "bg-[var(--color-pure-white)] text-[var(--color-ink-black)] border-[var(--color-faint-border)]",
+  unclassified: "bg-[var(--color-pure-white)] text-[var(--color-muted-gray)] border-[var(--color-faint-border)]",
 };
 
 export function ConditionBadge({ value, className }: { value: Condition; className?: string }) {
@@ -22,7 +23,7 @@ export function ConditionBadge({ value, className }: { value: Condition; classNa
 
 export function StatusBadge({ value }: { value: string }) {
   return (
-    <span className="badge-condition bg-white text-[#202723]">
+    <span className="badge-condition bg-[var(--color-pure-white)] text-[var(--color-ink-black)]">
       {value.replace(/_/g, " ")}
     </span>
   );

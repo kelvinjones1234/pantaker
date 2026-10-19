@@ -22,10 +22,20 @@ export const siteConfig = {
 } as const;
 
 export const uploadLimits = {
-  maxImages: 6,
+  maxImages: 3,
   maxBytes: 5 * 1024 * 1024, // 5MB per image
   allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
 } as const;
+
+/**
+ * Weight units for scrap listings. Every item is treated as scrap, so quantity
+ * is expressed together with its weight unit.
+ */
+export const weightUnits = [
+  { value: "kg", label: "Kilograms (kg)" },
+  { value: "tonnes", label: "Tonnes (t)" },
+  { value: "grams", label: "Grams (g)" },
+] as const;
 
 export const paginationDefaults = {
   marketplacePageSize: 24,

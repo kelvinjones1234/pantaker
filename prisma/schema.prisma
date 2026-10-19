@@ -1,0 +1,28 @@
+// Pantaker — Prisma owns the auth-facing Profile model only.
+// Identity/credentials live in Supabase Auth (auth.users); a Profile row is
+// upserted by the app keyed to that user id. Domain tables (listings,
+// categories, images, inquiries) stay managed in Supabase and are queried via
+// the Supabase client, not Prisma.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Profile {
+  id           String   @id @db.Uuid
+  display_name String?
+  username     String?  @unique
+  avatar_path  String?
+  city         String?
+  area         String?
+  account_type String?
+  bio          String?
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("profiles")
+}

@@ -20,14 +20,14 @@ export function Logo({
   className?: string;
 }) {
   const color =
-    variant === "light" ? "text-white" : variant === "mono" ? "text-current" : "text-[#000000]";
+    variant === "light" ? "text-[var(--color-pure-white)]" : variant === "mono" ? "text-current" : "text-[var(--color-ink-black)]";
   return (
     <span className={cn("inline-flex items-center gap-2", color, className)} role="img" aria-label="Pantaker home">
       <Mark />
       {!compact && (
         <span className="text-lg font-extrabold tracking-tight">
           PANTAKER
-          <span className="text-[#5433eb]">.</span>
+          <span className="text-[var(--color-shop-violet)]">.</span>
         </span>
       )}
     </span>

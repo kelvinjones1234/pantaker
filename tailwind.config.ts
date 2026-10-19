@@ -8,7 +8,7 @@ const config: Config = {
         primary: {
           DEFAULT: "var(--color-primary)",
           accent: "var(--color-primary-accent)",
-          foreground: "#FFFFFF",
+          foreground: "var(--color-pure-white)",
         },
         background: "var(--color-background)",
         surface: "var(--color-surface)",
@@ -21,6 +21,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "Inter", "Manrope", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "var(--font-brand-serif)", "Fraunces", "Georgia", "serif"],
       },
       borderRadius: {
         sm: "var(--radius-sm)",
@@ -30,8 +31,8 @@ const config: Config = {
         xl: "var(--radius-xl)",
       },
       boxShadow: {
-        card: "var(--shadow-card)",
-        pop: "var(--shadow-pop)",
+        card: "none",
+        pop: "none",
       },
       screens: {
         mdlg: "930px",

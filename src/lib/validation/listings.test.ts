@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createListingSchema,
   inquirySchema,
+  listingImageIdsSchema,
   marketplaceFilterSchema,
   reportSchema,
 } from "@/lib/validation/listings";
@@ -34,6 +35,16 @@ describe("listing pricing rules", () => {
     const r = createListingSchema.safeParse({ ...base, pricing_type: "fixed", price: -10 });
     expect(r.success).toBe(false);
   });
+
+  it("accepts a partially usable condition", () => {
+    const r = createListingSchema.safeParse({
+      ...base,
+      condition: "partially_usable",
+      pricing_type: "negotiable",
+      price: 12000,
+    });
+    expect(r.success).toBe(true);
+  });
 });
 
 describe("inquiry + report validation", () => {
@@ -51,6 +62,26 @@ describe("inquiry + report validation", () => {
         details: "bad",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("listing image ids", () => {
+  it("accepts an empty list (photos are optional)", () => {
+    expect(listingImageIdsSchema.safeParse([]).success).toBe(true);
+  });
+
+  it("accepts ordered Cloudflare image ids", () => {
+    const r = listingImageIdsSchema.safeParse(["aB3-_x", "Zz09"]);
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects ids with unsafe characters", () => {
+    expect(listingImageIdsSchema.safeParse(["../secret"]).success).toBe(false);
+  });
+
+  it("rejects more than the max upload count", () => {
+    const tooMany = Array.from({ length: 7 }, (_, i) => `img${i}`);
+    expect(listingImageIdsSchema.safeParse(tooMany).success).toBe(false);
   });
 });
 

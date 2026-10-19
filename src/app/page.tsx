@@ -1,10 +1,21 @@
 import { ShopLandingPage } from "@/components/marketplace/ShopLandingPage";
 import { searchListings, getCategories } from "@/features/listings/queries";
+import { getSessionUser } from "@/lib/supabase/server";
 
 export default async function HomePage() {
-  const [{ items, live }, rawCategories] = await Promise.all([
-    searchListings({ q: "", category: "", condition: "", city: "", sort: "newest", page: 1 }),
+  const [{ items, live }, rawCategories, user] = await Promise.all([
+    searchListings({
+      q: "",
+      category: "",
+      group: "",
+      condition: "",
+      city: "",
+      area: "",
+      sort: "newest",
+      page: 1,
+    }),
     getCategories(),
+    getSessionUser().catch(() => null),
   ]);
 
   const categories = rawCategories.map((c) => ({ name: c.name, slug: c.slug }));
@@ -14,6 +25,7 @@ export default async function HomePage() {
       initialItems={items}
       categories={categories}
       isLive={live}
+      user={user ? { id: user.id, email: user.email } : null}
     />
   );
 }
