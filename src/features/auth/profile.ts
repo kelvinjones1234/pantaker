@@ -1,34 +1,26 @@
-import type { User } from "@supabase/supabase-js";
+import type { Profile, User } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/prisma";
-import type { Profile } from "@/generated/prisma/client";
 
-/** Pull a human name from Supabase user metadata when available. */
-export function profileNameFromUser(user: User): string | null {
-  const meta = user.user_metadata ?? {};
-  const candidates = [meta.display_name, meta.full_name, meta.name];
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return candidate.trim().slice(0, 80);
-    }
-  }
-  return null;
+/** Pull a human name from the identity row when available. */
+export function profileNameFromUser(user: Pick<User, "name">): string | null {
+  const name = user.name?.trim();
+  return name ? name.slice(0, 80) : null;
 }
 
 /**
- * Idempotently mirror the Supabase Auth user into the Prisma `profiles` table.
- * Called after sign-up confirmation and after sign-in; safe to call repeatedly.
+ * Idempotently mirror the identity row into the Prisma `profiles` table.
+ * Sign-in already creates this row, so this is safe to call after any auth
+ * transition where a profile may have been missing.
  */
 export async function ensureProfile(user: User): Promise<Profile> {
   const prisma = getPrisma();
-  const displayName = profileNameFromUser(user);
   return prisma.profile.upsert({
     where: { id: user.id },
     create: {
       id: user.id,
-      display_name: displayName,
+      display_name: profileNameFromUser(user),
       account_type: "individual",
     },
-    // Never clobber details the user has since edited on their profile.
     update: {},
   });
 }

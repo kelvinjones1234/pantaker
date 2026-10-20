@@ -75,6 +75,18 @@ export function MarketplaceHeader({ initialQuery = "" }: { initialQuery?: string
           >
             How it works
           </Link>
+          <Link
+            href="/messages"
+            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+          >
+            Messages
+          </Link>
+          <Link
+            href="/notifications"
+            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+          >
+            Notifications
+          </Link>
         </nav>
 
         <Link

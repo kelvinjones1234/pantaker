@@ -1,9 +1,9 @@
 import type { Listing } from "@/types/marketplace";
 
 /**
- * Clearly-identified SAMPLE data for local preview when Supabase is not
+ * Clearly-identified SAMPLE data for local preview when the database is not
  * configured. Never presented as real activity. Production reads from
- * Supabase (see src/features/listings/queries.ts).
+ * configured (see src/features/listings/queries.ts).
  */
 export const SAMPLE_CATEGORIES = [
   { name: "Metals", slug: "metals", count: "Scrap iron, aluminium, copper" },
@@ -11,13 +11,37 @@ export const SAMPLE_CATEGORIES = [
   { name: "Electronics", slug: "electronics", count: "Phones, laptops, parts" },
   { name: "Appliances", slug: "appliances", count: "Fridges, cookers, ACs" },
   { name: "Furniture", slug: "furniture", count: "Chairs, tables, cabinets" },
-  { name: "Vehicle Parts", slug: "vehicle-parts", count: "Engines, tyres, spares" },
-  { name: "Construction", slug: "construction-materials", count: "Cement, blocks, rods" },
-  { name: "Electrical", slug: "electrical-materials", count: "Cables, boards, fittings" },
-  { name: "Plumbing", slug: "plumbing-materials", count: "Pipes, tanks, fittings" },
-  { name: "Industrial", slug: "industrial-equipment", count: "Motors, pumps, machinery" },
+  {
+    name: "Vehicle Parts",
+    slug: "vehicle-parts",
+    count: "Engines, tyres, spares",
+  },
+  {
+    name: "Construction",
+    slug: "construction-materials",
+    count: "Cement, blocks, rods",
+  },
+  {
+    name: "Electrical",
+    slug: "electrical-materials",
+    count: "Cables, boards, fittings",
+  },
+  {
+    name: "Plumbing",
+    slug: "plumbing-materials",
+    count: "Pipes, tanks, fittings",
+  },
+  {
+    name: "Industrial",
+    slug: "industrial-equipment",
+    count: "Motors, pumps, machinery",
+  },
   { name: "Household", slug: "household-items", count: "Reusable home goods" },
-  { name: "Paper & Packaging", slug: "paper-packaging", count: "Cartons, sacks, wrap" },
+  {
+    name: "Paper & Packaging",
+    slug: "paper-packaging",
+    count: "Cartons, sacks, wrap",
+  },
 ] as const;
 
 export interface SampleGroup {
@@ -99,7 +123,17 @@ function hoursAgo(hours: number): string {
 }
 
 export const SAMPLE_LISTINGS: Array<
-  Pick<Listing, "id" | "title" | "condition" | "pricing_type" | "price" | "city" | "area" | "created_at"> & {
+  Pick<
+    Listing,
+    | "id"
+    | "title"
+    | "condition"
+    | "pricing_type"
+    | "price"
+    | "city"
+    | "area"
+    | "created_at"
+  > & {
     category: string;
     group: string;
     image: string;

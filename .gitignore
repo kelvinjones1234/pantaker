@@ -3,10 +3,12 @@ node_modules/
 out/
 dist/
 coverage/
-.env*.local
 .env
-!.env.example
+.env*.local
 *.tsbuildinfo
 
 # Prisma generated client
 src/generated/
+
+# Local development image uploads
+.local-uploads/

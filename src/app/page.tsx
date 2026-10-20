@@ -1,6 +1,6 @@
 import { ShopLandingPage } from "@/components/marketplace/ShopLandingPage";
 import { searchListings, getCategories } from "@/features/listings/queries";
-import { getSessionUser } from "@/lib/supabase/server";
+import { getAuthUser } from "@/features/auth/queries";
 
 export default async function HomePage() {
   const [{ items, live }, rawCategories, user] = await Promise.all([
@@ -15,7 +15,7 @@ export default async function HomePage() {
       page: 1,
     }),
     getCategories(),
-    getSessionUser().catch(() => null),
+    getAuthUser().catch(() => null),
   ]);
 
   const categories = rawCategories.map((c) => ({ name: c.name, slug: c.slug }));

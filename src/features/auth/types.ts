@@ -5,7 +5,3 @@ export type AuthActionState = {
 };
 
 export const initialAuthState: AuthActionState = { status: "idle" };
-
-export type GoogleSignInResult =
-  | { ok: true; url: string }
-  | { ok: false; error: string };

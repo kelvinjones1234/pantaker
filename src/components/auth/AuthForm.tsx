@@ -1,9 +1,16 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
-import { requestEmailCodeAction, verifyEmailCodeAction } from "@/features/auth/actions";
+import {
+  useActionState,
+  useEffect,
+  useId,
+  useState,
+  useTransition,
+} from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { requestEmailCodeAction } from "@/features/auth/actions";
 import { initialAuthState } from "@/features/auth/types";
-import { GoogleButton } from "@/components/auth/GoogleButton";
 import { AlertIcon, MailIcon } from "@/components/auth/icons";
 
 const inputClass =
@@ -14,7 +21,11 @@ const RESEND_SECONDS = 60;
 function FieldError({ id, messages }: { id: string; messages?: string[] }) {
   if (!messages?.length) return null;
   return (
-    <p id={id} role="alert" className="mt-1.5 text-xs text-[var(--color-error)]">
+    <p
+      id={id}
+      role="alert"
+      className="mt-1.5 text-xs text-[var(--color-error)]"
+    >
       {messages[0]}
     </p>
   );
@@ -29,18 +40,23 @@ function FormAlert({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AuthForm({ next, initialError }: { next: string; initialError?: string }) {
+export function AuthForm({
+  next,
+  initialError,
+}: {
+  next: string;
+  initialError?: string;
+}) {
+  const router = useRouter();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [isVerifying, startVerify] = useTransition();
   const codeId = useId();
 
   const [reqState, requestCode, isRequesting] = useActionState(
     requestEmailCodeAction,
-    initialAuthState,
-  );
-  const [verifyState, verifyCode, isVerifying] = useActionState(
-    verifyEmailCodeAction,
     initialAuthState,
   );
 
@@ -65,28 +81,56 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
     setCooldown(RESEND_SECONDS);
   };
 
+  const verifyCode = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const token = String(
+      new FormData(event.currentTarget).get("token") ?? "",
+    ).trim();
+    if (!/^\d{6}$/.test(token)) {
+      setVerifyError("Enter the 6-digit code we emailed you.");
+      return;
+    }
+
+    setVerifyError(null);
+    startVerify(async () => {
+      const result = await signIn("credentials", {
+        email,
+        token,
+        redirect: false,
+      });
+      if (!result?.ok) {
+        setVerifyError(
+          "That code is invalid or has expired. Request a new one.",
+        );
+        return;
+      }
+      router.push(next);
+      router.refresh();
+    });
+  };
+
   if (step === "code") {
     return (
       <div className="flex w-full max-w-[352px] flex-col gap-4 sm:w-[352px]">
         <div className="flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-icon-accent-soft)] text-[var(--color-icon-accent)]">
-            <MailIcon className="h-7 w-7" />
-          </span>
           <h2 className="font-brand-serif mt-4 text-xl font-semibold tracking-tight text-[var(--color-ink-black)]">
             Enter your code
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-muted-gray)]">
             We emailed a 6-digit code to{" "}
-            <span className="font-medium text-[var(--color-ink-black)]">{email}</span>.
+            <span className="font-medium text-[var(--color-ink-black)]">
+              {email}
+            </span>
+            .
           </p>
         </div>
 
-        {reqState.status === "error" && reqState.message && <FormAlert>{reqState.message}</FormAlert>}
-        {verifyState.status === "error" && verifyState.message && (
-          <FormAlert>{verifyState.message}</FormAlert>
+        {reqState.status === "error" && reqState.message && (
+          <FormAlert>{reqState.message}</FormAlert>
         )}
+        {verifyError && <FormAlert>{verifyError}</FormAlert>}
 
-        <form action={verifyCode} noValidate className="flex flex-col gap-4">
+        <form onSubmit={verifyCode} noValidate className="flex flex-col gap-4">
           <input type="hidden" name="next" value={next} />
           <input type="hidden" name="email" value={email} />
 
@@ -105,11 +149,19 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
               required
               autoFocus
               placeholder="6-digit code"
-              aria-invalid={Boolean(verifyState.errors?.token)}
-              aria-describedby={verifyState.errors?.token ? `${codeId}-error` : undefined}
+              aria-invalid={Boolean(verifyError)}
+              aria-describedby={verifyError ? `${codeId}-error` : undefined}
               className={`${inputClass} text-center text-lg tracking-[0.4em] tabular`}
             />
-            <FieldError id={`${codeId}-error`} messages={verifyState.errors?.token} />
+            {verifyError && (
+              <p
+                id={`${codeId}-error`}
+                role="alert"
+                className="mt-1.5 text-xs text-[var(--color-error)]"
+              >
+                {verifyError}
+              </p>
+            )}
           </div>
 
           <button
@@ -124,7 +176,10 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
         <div className="flex items-center justify-between text-xs">
           <button
             type="button"
-            onClick={() => setStep("email")}
+            onClick={() => {
+              setStep("email");
+              setVerifyError(null);
+            }}
             className="cursor-pointer font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:text-[var(--color-ink-black)]"
           >
             Use a different email
@@ -135,7 +190,11 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
             disabled={cooldown > 0 || isRequesting}
             className="cursor-pointer font-medium text-[var(--color-shop-violet)] transition-colors duration-150 hover:underline disabled:cursor-not-allowed disabled:text-[var(--color-muted-gray)] disabled:no-underline"
           >
-            {cooldown > 0 ? `Resend in ${cooldown}s` : isRequesting ? "Sending…" : "Resend code"}
+            {cooldown > 0
+              ? `Resend in ${cooldown}s`
+              : isRequesting
+                ? "Sending…"
+                : "Resend code"}
           </button>
         </div>
       </div>
@@ -144,21 +203,13 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
 
   return (
     <div className="flex w-full max-w-[352px] flex-col gap-4 sm:w-[352px]">
-      <GoogleButton next={next} />
-
-      <div className="flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-[var(--color-faint-border)]" />
-        <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted-gray)]">
-          or
-        </span>
-        <span className="h-px flex-1 bg-[var(--color-faint-border)]" />
-      </div>
-
       <form action={requestCode} noValidate className="flex flex-col gap-4">
         <input type="hidden" name="next" value={next} />
 
         {initialError && <FormAlert>{initialError}</FormAlert>}
-        {reqState.status === "error" && reqState.message && <FormAlert>{reqState.message}</FormAlert>}
+        {reqState.status === "error" && reqState.message && (
+          <FormAlert>{reqState.message}</FormAlert>
+        )}
 
         <div>
           <label htmlFor="email" className="sr-only">
@@ -175,7 +226,9 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Enter your email"
             aria-invalid={Boolean(reqState.errors?.email)}
-            aria-describedby={reqState.errors?.email ? "email-error" : undefined}
+            aria-describedby={
+              reqState.errors?.email ? "email-error" : undefined
+            }
             className={inputClass}
           />
           <FieldError id="email-error" messages={reqState.errors?.email} />

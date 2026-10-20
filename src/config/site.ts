@@ -16,6 +16,7 @@ export const brand = {
 export const siteConfig = {
   name: "Pantaker",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? null,
   description:
     "Pantaker is a circular economy marketplace for unwanted items, scrap, and recoverable materials. Launching in Abuja, Nigeria.",
   locale: "en-NG",
@@ -40,4 +41,23 @@ export const weightUnits = [
 export const paginationDefaults = {
   marketplacePageSize: 24,
   dashboardPageSize: 20,
+} as const;
+
+/**
+ * Abuse controls for messaging. Enforced server-side in every send/start
+ * action — the browser is never trusted to self-limit.
+ */
+export const messagingLimits = {
+  /** Max unread/last-message threads loaded into one inbox. */
+  inboxPageSize: 100,
+  /** Max messages fetched for a single conversation view (most recent first). */
+  threadPageSize: 500,
+  /** Max recent messages scanned to build inbox previews / unread counts. */
+  inboxMessagesScan: 2000,
+  /** Max messages a single sender may post per minute. */
+  messagesPerMinute: 20,
+  /** Max new conversations a single buyer may open per hour. */
+  newConversationsPerHour: 10,
+  /** Max characters in one message body. */
+  maxBodyLength: 2000,
 } as const;

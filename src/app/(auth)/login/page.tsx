@@ -5,7 +5,7 @@ import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to Pantaker with Google or a one-time code sent to your email.",
+  description: "Sign in to Pantaker with a one-time code sent to your email.",
 };
 
 export default async function LoginPage({
@@ -20,7 +20,7 @@ export default async function LoginPage({
     <AuthCard
       eyebrow="Welcome to Pantaker"
       title="Sign in or create your account"
-      subtitle="Use Google, or enter your email and we'll send you a one-time code. No password to remember."
+      subtitle=""
     >
       <AuthForm next={next} initialError={params.error} />
     </AuthCard>

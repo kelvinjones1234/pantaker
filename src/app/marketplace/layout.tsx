@@ -7,7 +7,7 @@ export default function MarketplaceLayout({ children }: { children: React.ReactN
       <MarketplaceHeader />
       {children}
       <footer className="mt-12 border-t border-[var(--color-faint-border)]">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center justify-between gap-3 px-4 py-8 text-[12px] text-[var(--color-muted-gray)] sm:flex-row sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center justify-between gap-3 px-4 py-8 text-[12px] text-[var(--color-ash-veil)] sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-[var(--color-ink-black)]">Pantaker</span>
             <span aria-hidden="true">•</span>

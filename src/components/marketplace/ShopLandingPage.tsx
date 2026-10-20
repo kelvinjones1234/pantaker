@@ -1,10 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import {
   ArrowRightIcon,
   CarIcon,
@@ -41,7 +47,16 @@ interface ShopLandingPageProps {
 }
 
 /** Circular chip tones for department icons (neutral + violet set, no green). */
-const CHIP_TONES = ["var(--color-shop-violet)", "var(--color-slate-ink)", "var(--color-ash-veil)", "var(--color-muted-gray)", "var(--color-warm-fog)", "var(--color-violet-wash)", "var(--color-ink-black)", "var(--color-stone-warm)"];
+const CHIP_TONES = [
+  "var(--color-shop-violet)",
+  "var(--color-slate-ink)",
+  "var(--color-ash-veil)",
+  "var(--color-muted-gray)",
+  "var(--color-warm-fog)",
+  "var(--color-violet-wash)",
+  "var(--color-ink-black)",
+  "var(--color-stone-warm)",
+];
 
 const CATEGORY_ICONS: Record<string, BrandIconComponent> = {
   metals: HammerIcon,
@@ -68,7 +83,8 @@ const YARD_TYPES = [
     blurb: "Copper wire, aluminium and iron offcuts bought in bulk.",
     categorySlug: "metals",
     examples: ["Copper Wire", "Aluminium", "Iron Offcuts"],
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=70",
+    image:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=70",
     where: "Common around Apo Mechanic Village",
   },
   {
@@ -77,7 +93,8 @@ const YARD_TYPES = [
     blurb: "Rods, beams and site leftovers at below-market prices.",
     categorySlug: "construction-materials",
     examples: ["Iron Rods 12mm", "Steel Beams", "Site Surplus"],
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=70",
+    image:
+      "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=70",
     where: "Common around Dei-Dei Market",
   },
   {
@@ -86,7 +103,8 @@ const YARD_TYPES = [
     blurb: "Technicians hunting boards, screens and inverter batteries.",
     categorySlug: "electronics",
     examples: ["Motherboards", "Laptop Screens", "Batteries"],
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=70",
+    image:
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=70",
     where: "Common around Wuse 2 / Banex",
   },
   {
@@ -95,7 +113,8 @@ const YARD_TYPES = [
     blurb: "Engines, gearboxes and body parts for popular models.",
     categorySlug: "vehicle-parts",
     examples: ["Engines", "Gearboxes", "Toyota & Honda"],
-    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&q=70",
+    image:
+      "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&q=70",
     where: "Common around Garki / Central Area",
   },
 ];
@@ -110,7 +129,9 @@ const TRENDING_QUERIES = [
 ];
 
 function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 interface DistrictPickerProps {
@@ -139,7 +160,8 @@ function DistrictPicker({
     if (!search.trim()) return ABUJA_AREAS;
     const q = search.toLowerCase().trim();
     return ABUJA_AREAS.filter(
-      (a) => a.name.toLowerCase().includes(q) || a.hub.toLowerCase().includes(q),
+      (a) =>
+        a.name.toLowerCase().includes(q) || a.hub.toLowerCase().includes(q),
     );
   }, [search]);
 
@@ -169,7 +191,10 @@ function DistrictPicker({
     }
     searchRef.current?.focus();
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -191,7 +216,9 @@ function DistrictPicker({
 
   const moveActive = (delta: number) => {
     if (visibleAreas.length === 0) return;
-    setActiveIndex((i) => (i + delta + visibleAreas.length) % visibleAreas.length);
+    setActiveIndex(
+      (i) => (i + delta + visibleAreas.length) % visibleAreas.length,
+    );
   };
 
   const handleListKeyDown = (e: React.KeyboardEvent) => {
@@ -272,7 +299,6 @@ function DistrictPicker({
               {count} {count === 1 ? "item" : "items"}
             </span>
           )}
-          
         </div>
       </li>
     );
@@ -288,7 +314,10 @@ function DistrictPicker({
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         onKeyDown={(e) => {
-          if ((e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") && !isOpen) {
+          if (
+            (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") &&
+            !isOpen
+          ) {
             e.preventDefault();
             setIsOpen(true);
           }
@@ -303,12 +332,20 @@ function DistrictPicker({
             : "border-[var(--color-faint-border)]"
         } ${isFiltered ? "text-[var(--color-shop-violet)]" : "text-[var(--color-ink-black)]"}`}
       >
-        <MapPinIcon className="h-3.5 w-3.5 text-[var(--color-icon-accent)] shrink-0" aria-hidden="true" />
-        <span className={`truncate max-w-[110px] sm:max-w-[140px] ${isFiltered ? "font-semibold text-[var(--color-ink-black)]" : "font-medium text-[var(--color-ink-black)]"}`}>
+        <MapPinIcon
+          className="h-3.5 w-3.5 text-[var(--color-icon-accent)] shrink-0"
+          aria-hidden="true"
+        />
+        <span
+          className={`truncate max-w-[110px] sm:max-w-[140px] ${isFiltered ? "font-semibold text-[var(--color-ink-black)]" : "font-medium text-[var(--color-ink-black)]"}`}
+        >
           {selectedArea}
         </span>
         {isFiltered && (
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-shop-violet)] shrink-0" aria-hidden="true" />
+          <span
+            className="h-1.5 w-1.5 rounded-full bg-[var(--color-shop-violet)] shrink-0"
+            aria-hidden="true"
+          />
         )}
         <ChevronDownIcon
           className={`h-3.5 w-3.5 text-[var(--color-muted-gray)] transition-transform duration-200 shrink-0 ${
@@ -324,12 +361,18 @@ function DistrictPicker({
           <div className="flex items-center justify-between gap-2 border-b border-[var(--color-faint-border)] px-2 pb-2.5 pt-1">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-[var(--color-icon-accent)]" aria-hidden="true" />
+                <MapPinIcon
+                  className="h-3.5 w-3.5 shrink-0 text-[var(--color-icon-accent)]"
+                  aria-hidden="true"
+                />
                 <p className="truncate text-[13px] font-semibold tracking-tight text-[var(--color-ink-black)]">
                   Abuja Districts
                 </p>
               </div>
-              <p className="mt-0.5 text-[11px] text-[var(--color-muted-gray)]" aria-live="polite">
+              <p
+                className="mt-0.5 text-[11px] text-[var(--color-muted-gray)]"
+                aria-live="polite"
+              >
                 {search.trim()
                   ? `${visibleAreas.length} of ${ABUJA_AREAS.length} areas`
                   : `${ABUJA_AREAS.length - 1} districts · ${totalListings} ${totalListings === 1 ? "listing" : "listings"}`}
@@ -372,7 +415,9 @@ function DistrictPicker({
               aria-expanded={isOpen}
               aria-controls={listboxId}
               aria-activedescendant={
-                visibleAreas.length > 0 ? `${listboxId}-option-${activeIndex}` : undefined
+                visibleAreas.length > 0
+                  ? `${listboxId}-option-${activeIndex}`
+                  : undefined
               }
               aria-autocomplete="list"
               autoComplete="off"
@@ -407,7 +452,10 @@ function DistrictPicker({
             {visibleAreas.length === 0 ? (
               <li className="flex flex-col items-center px-3 py-6 text-center">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas-mist)]">
-                  <SearchIcon className="h-4 w-4 text-[var(--color-muted-gray)]" aria-hidden="true" />
+                  <SearchIcon
+                    className="h-4 w-4 text-[var(--color-muted-gray)]"
+                    aria-hidden="true"
+                  />
                 </span>
                 <p className="mt-2 text-xs font-semibold text-[var(--color-ink-black)]">
                   No districts found
@@ -428,11 +476,17 @@ function DistrictPicker({
               </li>
             ) : (
               <>
-                {allAbujaIndex >= 0 && renderOption(visibleAreas[allAbujaIndex], allAbujaIndex)}
+                {allAbujaIndex >= 0 &&
+                  renderOption(visibleAreas[allAbujaIndex], allAbujaIndex)}
                 {allAbujaIndex >= 0 && districtOptions.length > 0 && (
-                  <li aria-hidden="true" className="mx-2 my-1.5 border-t border-[var(--color-faint-border)]" />
+                  <li
+                    aria-hidden="true"
+                    className="mx-2 my-1.5 border-t border-[var(--color-faint-border)]"
+                  />
                 )}
-                {districtOptions.map((area) => renderOption(area, visibleAreas.indexOf(area)))}
+                {districtOptions.map((area) =>
+                  renderOption(area, visibleAreas.indexOf(area)),
+                )}
               </>
             )}
           </ul>
@@ -440,12 +494,20 @@ function DistrictPicker({
           {/* Keyboard hint */}
           {visibleAreas.length > 0 && (
             <p className="mt-1 border-t border-[var(--color-faint-border)] px-2 pb-0.5 pt-2 text-center text-[11px] text-[var(--color-muted-gray)]">
-              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">↑</kbd>
-              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">↓</kbd>
+              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">
+                ↑
+              </kbd>
+              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">
+                ↓
+              </kbd>
               {" to navigate · "}
-              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">Enter</kbd>
+              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">
+                Enter
+              </kbd>
               {" to select · "}
-              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">Esc</kbd>
+              <kbd className="rounded border border-[var(--color-faint-border)] bg-[var(--color-canvas-mist)] px-1 font-sans">
+                Esc
+              </kbd>
               {" to close"}
             </p>
           )}
@@ -455,13 +517,22 @@ function DistrictPicker({
   );
 }
 
-export function ShopLandingPage({ initialItems, categories, isLive, user }: ShopLandingPageProps) {
+export function ShopLandingPage({
+  initialItems,
+  categories,
+  isLive,
+  user,
+}: ShopLandingPageProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedArea, setSelectedArea] = useState("All Abuja");
-  const [activeTab, setActiveTab] = useState<"all" | "scrap" | "usable" | "budget" | "free">("all");
-  const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc">("newest");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "scrap" | "usable" | "budget" | "free"
+  >("all");
+  const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc">(
+    "newest",
+  );
   const [featureIndex, setFeatureIndex] = useState(0);
 
   const areaCounts = useMemo(() => {
@@ -475,7 +546,8 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
   }, [initialItems]);
 
   const categoryName = (slug: string) =>
-    categories.find((c) => c.slug.toLowerCase() === slug.toLowerCase())?.name ?? slug;
+    categories.find((c) => c.slug.toLowerCase() === slug.toLowerCase())?.name ??
+    slug;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -486,20 +558,7 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
     e.preventDefault();
     e.stopPropagation();
 
-    let isAuthed = Boolean(user);
-    if (!isAuthed && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          isAuthed = true;
-        }
-      } catch {
-        isAuthed = false;
-      }
-    }
-
-    if (!isAuthed) {
+    if (!user) {
       router.push("/login?next=/sell");
       return;
     }
@@ -520,13 +579,17 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
     }
     if (selectedCategory !== "all") {
       const name = categoryName(selectedCategory);
-      result = result.filter((item) => item.category?.toLowerCase() === name.toLowerCase());
+      result = result.filter(
+        (item) => item.category?.toLowerCase() === name.toLowerCase(),
+      );
     }
     if (selectedArea !== "All Abuja") {
       result = result.filter((item) => item.area === selectedArea);
     }
     if (activeTab === "scrap") {
-      result = result.filter((item) => item.condition === "scrap" || item.condition === "for_parts");
+      result = result.filter(
+        (item) => item.condition === "scrap" || item.condition === "for_parts",
+      );
     } else if (activeTab === "usable") {
       result = result.filter(
         (item) =>
@@ -535,10 +598,15 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
           item.condition === "partially_usable",
       );
     } else if (activeTab === "budget") {
-      result = result.filter((item) => (item.price ?? 0) > 0 && (item.price ?? 0) <= 100000);
+      result = result.filter(
+        (item) => (item.price ?? 0) > 0 && (item.price ?? 0) <= 100000,
+      );
     } else if (activeTab === "free") {
       result = result.filter(
-        (item) => item.pricing_type === "free" || item.price === null || item.price === 0,
+        (item) =>
+          item.pricing_type === "free" ||
+          item.price === null ||
+          item.price === 0,
       );
     }
     if (sortBy === "price_asc") {
@@ -546,20 +614,33 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
     } else if (sortBy === "price_desc") {
       result.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
     } else {
-      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      result.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
     }
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialItems, searchQuery, selectedCategory, selectedArea, activeTab, sortBy, categories]);
+  }, [
+    initialItems,
+    searchQuery,
+    selectedCategory,
+    selectedArea,
+    activeTab,
+    sortBy,
+    categories,
+  ]);
 
   const featured = initialItems.slice(0, 3);
   const heroGrid = initialItems.slice(3, 7);
-  const activeFeature = featured.length > 0 ? featured[featureIndex % featured.length] : null;
+  const activeFeature =
+    featured.length > 0 ? featured[featureIndex % featured.length] : null;
   const curated = initialItems.slice(0, 4);
 
   const countForSlug = (slug: string) => {
     const name = categoryName(slug).toLowerCase();
-    return initialItems.filter((i) => i.category?.toLowerCase() === name).length;
+    return initialItems.filter((i) => i.category?.toLowerCase() === name)
+      .length;
   };
 
   const departmentsRef = useRef<HTMLElement>(null);
@@ -629,27 +710,53 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
   };
 
   return (
-    <div id="top" className="relative min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]">
+    <div
+      id="top"
+      className="relative min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]"
+    >
       {/* 1. FLOATING LEFT NAV RAIL DOCK */}
-      <aside className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 md:flex" aria-label="Quick navigation">
+      <aside
+        className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 md:flex"
+        aria-label="Quick navigation"
+      >
         <div className="pointer-events-auto flex flex-col items-center gap-5 rounded-full bg-[var(--color-pure-white)] px-2.5 py-4">
-          <button type="button" onClick={() => scrollToId("top")} aria-label="Home" className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-ink-black)] transition-colors hover:bg-[var(--color-canvas-mist)]">
+          <button
+            type="button"
+            onClick={() => scrollToId("top")}
+            aria-label="Home"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-ink-black)] transition-colors hover:bg-[var(--color-canvas-mist)]"
+          >
             <HomeIcon className="h-[22px] w-[22px]" />
           </button>
-          <button type="button" onClick={() => scrollToId("departments")} aria-label="Departments" className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]">
+          <button
+            type="button"
+            onClick={() => scrollToId("departments")}
+            aria-label="Departments"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]"
+          >
             <GridIcon className="h-[21px] w-[21px]" />
           </button>
-          <button type="button" onClick={() => scrollToId("feed")} aria-label="Marketplace feed" className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]">
+          <button
+            type="button"
+            onClick={() => scrollToId("feed")}
+            aria-label="Marketplace feed"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]"
+          >
             <TagIcon className="h-[21px] w-[21px]" />
           </button>
-          <button type="button" onClick={() => scrollToId("how")} aria-label="How it works" className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]">
+          <button
+            type="button"
+            onClick={() => scrollToId("how")}
+            aria-label="How it works"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]"
+          >
             <WrenchIcon className="h-[21px] w-[21px]" />
           </button>
         </div>
         <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-full bg-[var(--color-pure-white)] px-2.5 py-3">
           <Link
-            href={user ? "/sell" : "/login?next=/sell"}
-            aria-label={user ? "Post a listing" : "Sign in to Pantaker"}
+            href={user ? "/seller" : "/login?next=/seller"}
+            aria-label={user ? "Open seller dashboard" : "Sign in to Pantaker"}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-sm font-semibold tracking-wide text-[var(--color-pure-white)] ring-1 ring-[var(--color-faint-border)] transition-opacity duration-200 hover:opacity-90"
           >
             {user ? (user.email?.[0]?.toUpperCase() ?? "P") : "P"}
@@ -658,19 +765,39 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
       </aside>
 
       {/* MOBILE BOTTOM DOCK */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-[var(--color-faint-border)] bg-[var(--overlay-paper-95)] px-3 py-2 backdrop-blur-md md:hidden" aria-label="Mobile navigation">
-        <button type="button" onClick={() => scrollToId("top")} className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-ink-black)]">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-[var(--color-faint-border)] bg-[var(--overlay-paper-95)] px-3 py-2 backdrop-blur-md md:hidden"
+        aria-label="Mobile navigation"
+      >
+        <button
+          type="button"
+          onClick={() => scrollToId("top")}
+          className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-ink-black)]"
+        >
           <HomeIcon className="h-5 w-5" />
           <span>Home</span>
         </button>
-        <button type="button" onClick={() => scrollToId("departments")} className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-muted-gray)]">
+        <button
+          type="button"
+          onClick={() => scrollToId("departments")}
+          className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-muted-gray)]"
+        >
           <GridIcon className="h-5 w-5" />
           <span>Shop</span>
         </button>
-        <button type="button" onClick={() => scrollToId("feed")} aria-label="Browse feed" className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-[var(--color-pure-white)] ring-4 ring-[var(--color-pure-white)]">
+        <button
+          type="button"
+          onClick={() => scrollToId("feed")}
+          aria-label="Browse feed"
+          className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-[var(--color-pure-white)] ring-4 ring-[var(--color-pure-white)]"
+        >
           <SearchIcon className="h-6 w-6" />
         </button>
-        <button type="button" onClick={() => scrollToId("how")} className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-muted-gray)]">
+        <button
+          type="button"
+          onClick={() => scrollToId("how")}
+          className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-muted-gray)]"
+        >
           <WrenchIcon className="h-5 w-5" />
           <span>How</span>
         </button>
@@ -683,7 +810,15 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
           {/* Top bar: Brand logo, search pill, Abuja district picker */}
           <div className="relative flex w-full flex-col gap-3 sm:min-h-[64px] mdlg:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex w-full items-center justify-between sm:w-auto">
-              <Link href="#top" onClick={(e) => { e.preventDefault(); scrollToId("top"); }} aria-label="Pantaker home" className="flex items-center">
+              <Link
+                href="#top"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToId("top");
+                }}
+                aria-label="Pantaker home"
+                className="flex items-center"
+              >
                 <Logo />
               </Link>
               <div className="sm:hidden">
@@ -700,8 +835,13 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
               onSubmit={handleSearchSubmit}
               className="flex h-[64px] w-full max-w-[352px] items-center gap-3 rounded-full border border-[var(--color-ink-10)] bg-[var(--color-pure-white)] pl-5 pr-2 transition-all focus-within:border-[var(--color-muted-gray)] sm:mx-auto sm:w-[352px]"
             >
-              <SearchIcon className="h-5 w-5 shrink-0 select-none text-[var(--color-muted-gray)]" aria-hidden="true" />
-              <label htmlFor="main-search" className="sr-only">Search listings</label>
+              <SearchIcon
+                className="h-5 w-5 shrink-0 select-none text-[var(--color-muted-gray)]"
+                aria-hidden="true"
+              />
+              <label htmlFor="main-search" className="sr-only">
+                Search listings
+              </label>
               <input
                 id="main-search"
                 type="search"
@@ -712,7 +852,12 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                 className="h-full w-full flex-1 border-0 bg-transparent p-0 text-[15px] sm:text-[16px] text-[var(--color-ink-black)] tracking-[-0.031em] outline-none placeholder:text-[var(--color-muted-gray)] focus-visible:outline-none"
               />
               {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search" className="rounded-full p-1 text-[var(--color-muted-gray)] hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]">
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="rounded-full p-1 text-[var(--color-muted-gray)] hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+                >
                   <XIcon className="h-4 w-4" />
                 </button>
               )}
@@ -750,7 +895,8 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
               {categories.slice(0, 4).map((c, i) => {
                 const Icon = CATEGORY_ICONS[c.slug] ?? PackageIcon;
                 const tone = CHIP_TONES[i % CHIP_TONES.length];
-                const isActive = selectedCategory.toLowerCase() === c.slug.toLowerCase();
+                const isActive =
+                  selectedCategory.toLowerCase() === c.slug.toLowerCase();
                 return (
                   <button
                     key={c.slug}
@@ -770,11 +916,16 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                       className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full"
                       style={{ backgroundColor: tone }}
                     >
-                      <Icon className="h-4 w-4 text-[var(--color-pure-white)]" aria-hidden="true" />
+                      <Icon
+                        className="h-4 w-4 text-[var(--color-pure-white)]"
+                        aria-hidden="true"
+                      />
                     </span>
                     <span
                       className={`text-[13px] font-medium tracking-tight ${
-                        isActive ? "text-[var(--color-shop-violet)]" : "text-[var(--color-ink-black)]"
+                        isActive
+                          ? "text-[var(--color-shop-violet)]"
+                          : "text-[var(--color-ink-black)]"
                       }`}
                     >
                       {c.name}
@@ -795,18 +946,29 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
               >
                 <GridIcon className="h-4 w-4" aria-hidden="true" />
               </button>
-              <span aria-hidden="true" className="block h-1 w-2 shrink-0 sm:hidden" />
+              <span
+                aria-hidden="true"
+                className="block h-1 w-2 shrink-0 sm:hidden"
+              />
             </div>
           </nav>
         </header>
 
         {/* 3. HERO SHOWCASE BANNER */}
         {activeFeature && (
-          <section aria-label="Featured find" className="relative flex min-h-[460px] w-full items-center overflow-hidden rounded-[28px] bg-[var(--color-slate-ink)]">
+          <section
+            aria-label="Featured find"
+            className="relative flex min-h-[460px] w-full items-center overflow-hidden rounded-[28px] bg-[var(--color-slate-ink)]"
+          >
             {activeFeature.image && (
               <div className="absolute inset-0 z-0" aria-hidden="true">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={activeFeature.image} alt="" className="h-full w-full object-cover object-center" loading="eager" />
+                <img
+                  src={activeFeature.image}
+                  alt=""
+                  className="h-full w-full object-cover object-center"
+                  loading="eager"
+                />
                 <div className="absolute inset-0 bg-[var(--overlay-ink-60)]" />
               </div>
             )}
@@ -814,10 +976,14 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
               <div className="flex max-w-xl flex-1 flex-col justify-between self-stretch text-[var(--color-pure-white)]">
                 <div>
                   <div className="text-[13px] font-medium leading-tight tracking-wide text-[var(--ink-on-dark-95)]">
-                    Featured find · {activeFeature.category ?? "Recoverable item"}
+                    Featured find ·{" "}
+                    {activeFeature.category ?? "Recoverable item"}
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[var(--ink-on-dark-85)]">
-                    <ConditionBadge value={activeFeature.condition} className="border-[var(--overlay-paper-border-20)] bg-[var(--overlay-paper-10)] text-[var(--color-pure-white)]" />
+                    <ConditionBadge
+                      value={activeFeature.condition}
+                      className="border-[var(--overlay-paper-border-20)] bg-[var(--overlay-paper-10)] text-[var(--color-pure-white)]"
+                    />
                     <span>{timeAgo(activeFeature.created_at)}</span>
                   </div>
                 </div>
@@ -826,9 +992,14 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                     {activeFeature.title}
                   </p>
                   <p className="font-sans tabular mt-3 text-xl font-normal tracking-wide text-[var(--ink-on-dark-95)] sm:text-2xl">
-                    {pricingLabel(activeFeature.pricing_type, activeFeature.price)}
+                    {pricingLabel(
+                      activeFeature.pricing_type,
+                      activeFeature.price,
+                    )}
                     <span className="ml-2 text-sm text-[var(--ink-on-dark-70)]">
-                      {activeFeature.area ? `${activeFeature.area}, Abuja` : activeFeature.city}
+                      {activeFeature.area
+                        ? `${activeFeature.area}, Abuja`
+                        : activeFeature.city}
                     </span>
                   </p>
                 </div>
@@ -837,7 +1008,9 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                     type="button"
                     onClick={() => {
                       const match = categories.find(
-                        (c) => c.name.toLowerCase() === (activeFeature.category ?? "").toLowerCase(),
+                        (c) =>
+                          c.name.toLowerCase() ===
+                          (activeFeature.category ?? "").toLowerCase(),
                       );
                       pickDepartment(match ? match.slug : "");
                     }}
@@ -846,7 +1019,11 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                     Shop similar
                   </button>
                   {featured.length > 1 && (
-                    <div className="flex items-center gap-1.5 pl-2" role="tablist" aria-label="Featured finds">
+                    <div
+                      className="flex items-center gap-1.5 pl-2"
+                      role="tablist"
+                      aria-label="Featured finds"
+                    >
                       {featured.map((f, i) => (
                         <button
                           key={f.id}
@@ -869,7 +1046,9 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                       key={item.id}
                       type="button"
                       onClick={() => {
-                        setSearchQuery(item.title.split(" ").slice(0, 2).join(" "));
+                        setSearchQuery(
+                          item.title.split(" ").slice(0, 2).join(" "),
+                        );
                         scrollToId("feed");
                       }}
                       className="group relative aspect-[4/4.5] overflow-hidden rounded-[20px] bg-neutral-800 text-left"
@@ -877,9 +1056,16 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                     >
                       {item.image ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={item.image} alt={item.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
                       ) : (
-                        <span className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--ink-on-dark-70)]">{item.title}</span>
+                        <span className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--ink-on-dark-70)]">
+                          {item.title}
+                        </span>
                       )}
                       <span className="font-sans tabular absolute left-2.5 top-2.5 rounded-full border border-[var(--overlay-paper-border-10)] bg-[var(--overlay-ink-45)] px-2.5 py-1 text-xs font-medium tracking-tight text-[var(--color-pure-white)] backdrop-blur-md">
                         {pricingLabel(item.pricing_type, item.price)}
@@ -893,13 +1079,26 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
         )}
 
         {/* 4. TRENDING SELLER TYPES */}
-        <section aria-labelledby="trending-heading" className="mb-8 mt-16 w-full">
+        <section
+          aria-labelledby="trending-heading"
+          className="mb-8 mt-16 w-full"
+        >
           <div className="mb-5 flex items-center justify-between">
-            <button type="button" onClick={() => scrollToId("feed")} className="group inline-flex items-center gap-1.5">
-              <h2 id="trending-heading" className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]">
+            <button
+              type="button"
+              onClick={() => scrollToId("feed")}
+              className="group inline-flex items-center gap-1.5"
+            >
+              <h2
+                id="trending-heading"
+                className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]"
+              >
                 Trending seller types
               </h2>
-              <ChevronRightIcon className="h-[18px] w-[18px] text-[var(--color-ink-black)] transition-transform group-hover:translate-x-1" aria-hidden="true" />
+              <ChevronRightIcon
+                className="h-[18px] w-[18px] text-[var(--color-ink-black)] transition-transform group-hover:translate-x-1"
+                aria-hidden="true"
+              />
             </button>
             <span className="text-xs text-[var(--color-muted-gray)]">
               {isLive ? "Live counts" : "Preview counts"} · Abuja
@@ -913,18 +1112,30 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                   key={yard.id}
                   type="button"
                   onClick={() => pickDepartment(yard.categorySlug)}
-                   className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-[28px] bg-neutral-200 text-left transition"
+                  className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-[28px] bg-neutral-200 text-left transition"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={yard.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-[var(--overlay-ink-45)]" aria-hidden="true" />
+                  <img
+                    src={yard.image}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div
+                    className="absolute inset-0 bg-[var(--overlay-ink-45)]"
+                    aria-hidden="true"
+                  />
                   <span className="absolute left-4 top-4 rounded-full bg-[var(--overlay-paper-90)] px-2.5 py-1 text-xs font-medium text-[var(--color-ink-black)] backdrop-blur-md">
                     {yard.title}
                   </span>
                   <span className="absolute bottom-5 left-5 right-5 text-[var(--color-pure-white)]">
-                    <span className="font-brand-serif block text-3xl font-semibold tracking-tight">{yard.title.split(" ")[0]}</span>
+                    <span className="font-brand-serif block text-3xl font-semibold tracking-tight">
+                      {yard.title.split(" ")[0]}
+                    </span>
                     <span className="mt-1 flex items-center gap-2 text-xs text-[var(--ink-on-dark-90)]">
-                      <span>{n} {n === 1 ? "listing" : "listings"}</span>
+                      <span>
+                        {n} {n === 1 ? "listing" : "listings"}
+                      </span>
                       <span aria-hidden="true">•</span>
                       <span className="truncate">{yard.where}</span>
                     </span>
@@ -936,14 +1147,22 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
         </section>
 
         {/* 5. CURATED FOR YOU */}
-        <section aria-labelledby="curated-heading" className="mb-8 mt-16 w-full">
+        <section
+          aria-labelledby="curated-heading"
+          className="mb-8 mt-16 w-full"
+        >
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 id="curated-heading" className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]">
+              <h2
+                id="curated-heading"
+                className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]"
+              >
                 Curated for you
               </h2>
               <p className="mt-0.5 text-[13px] text-[var(--color-muted-gray)]">
-                {isLive ? "Fresh picks from Abuja sellers" : "Sample picks — connect Supabase for the live feed"}
+                {isLive
+                  ? "Fresh picks from Abuja sellers"
+                  : "Sample picks — connect the database for the live feed"}
               </p>
             </div>
             <button
@@ -956,15 +1175,25 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
           </div>
           {curated.length === 0 ? (
             <div className="rounded-[28px] bg-[var(--color-pure-white)] p-12 text-center">
-              <PackageIcon className="mx-auto h-12 w-12 text-[var(--color-muted-gray)]" aria-hidden="true" />
-              <h3 className="mt-3 text-base font-semibold text-[var(--color-ink-black)]">No picks yet</h3>
-              <p className="mt-1 text-xs text-[var(--color-muted-gray)]">New unwanted items appear here as soon as they are listed.</p>
+              <PackageIcon
+                className="mx-auto h-12 w-12 text-[var(--color-muted-gray)]"
+                aria-hidden="true"
+              />
+              <h3 className="mt-3 text-base font-semibold text-[var(--color-ink-black)]">
+                No picks yet
+              </h3>
+              <p className="mt-1 text-xs text-[var(--color-muted-gray)]">
+                New unwanted items appear here as soon as they are listed.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {curated.map((item) => {
                 return (
-                  <article key={item.id} className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5">
+                  <article
+                    key={item.id}
+                    className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5"
+                  >
                     <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-neutral-100">
                       {item.image ? (
                         <Image
@@ -976,14 +1205,18 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <span className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">No photo provided</span>
+                        <span className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">
+                          No photo provided
+                        </span>
                       )}
                       <span className="absolute bottom-2 left-2 rounded-full bg-[var(--overlay-paper-95)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink-black)]">
                         {item.category ?? "Recoverable item"}
                       </span>
                     </div>
                     <div className="px-1.5 pb-1 pt-2.5">
-                      <h4 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">{item.title}</h4>
+                      <h4 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
+                        {item.title}
+                      </h4>
                       <div className="mt-1.5 flex items-center justify-between">
                         <span className="font-sans tabular text-[14px] font-semibold tracking-tight text-[var(--color-ink-black)]">
                           {pricingLabel(item.pricing_type, item.price)}
@@ -992,7 +1225,8 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                       </div>
                       <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--color-muted-gray)]">
                         <MapPinIcon className="h-3 w-3" aria-hidden="true" />
-                        {item.area ? `${item.area}, Abuja` : item.city} · {timeAgo(item.created_at)}
+                        {item.area ? `${item.area}, Abuja` : item.city} ·{" "}
+                        {timeAgo(item.created_at)}
                       </p>
                     </div>
                   </article>
@@ -1003,14 +1237,24 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
         </section>
 
         {/* 6. FULL FEED WITH FILTERS */}
-        <section id="feed" aria-labelledby="feed-heading" className="mb-8 mt-16 w-full scroll-mt-6">
+        <section
+          id="feed"
+          aria-labelledby="feed-heading"
+          className="mb-8 mt-16 w-full scroll-mt-6"
+        >
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 id="feed-heading" className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]">
-                {searchQuery || selectedCategory !== "all" ? "Results" : "Fresh near you"}
+              <h2
+                id="feed-heading"
+                className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]"
+              >
+                {searchQuery || selectedCategory !== "all"
+                  ? "Results"
+                  : "Fresh near you"}
               </h2>
               <p className="mt-0.5 text-[13px] text-[var(--color-muted-gray)]">
-                Showing {filteredListings.length} {filteredListings.length === 1 ? "item" : "items"}
+                Showing {filteredListings.length}{" "}
+                {filteredListings.length === 1 ? "item" : "items"}
                 {isLive ? " in Abuja" : " in this preview"}
               </p>
             </div>
@@ -1029,14 +1273,18 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
                     aria-pressed={activeTab === tab.id}
                     className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                      activeTab === tab.id ? "bg-[var(--color-ink-black)] text-[var(--color-pure-white)]" : "text-[var(--color-muted-gray)] hover:text-[var(--color-ink-black)]"
+                      activeTab === tab.id
+                        ? "bg-[var(--color-ink-black)] text-[var(--color-pure-white)]"
+                        : "text-[var(--color-muted-gray)] hover:text-[var(--color-ink-black)]"
                     }`}
                   >
                     {tab.label}
                   </button>
                 ))}
               </div>
-              <label className="sr-only" htmlFor="feed-sort">Sort listings</label>
+              <label className="sr-only" htmlFor="feed-sort">
+                Sort listings
+              </label>
               <select
                 id="feed-sort"
                 value={sortBy}
@@ -1061,9 +1309,12 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                   aria-hidden="true"
                 />
               </div>
-              <h3 className="mt-2 text-base font-semibold text-[var(--color-ink-black)]">No items match your search</h3>
+              <h3 className="mt-2 text-base font-semibold text-[var(--color-ink-black)]">
+                No items match your search
+              </h3>
               <p className="mt-1 max-w-sm text-xs text-[var(--color-muted-gray)]">
-                Try clearing filters, searching different keywords, or broadening your district.
+                Try clearing filters, searching different keywords, or
+                broadening your district.
               </p>
               <button
                 type="button"
@@ -1082,7 +1333,10 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {filteredListings.map((item) => {
                 return (
-                  <article key={item.id} className="shop-card group flex flex-col p-2.5 transition-all hover:-translate-y-0.5">
+                  <article
+                    key={item.id}
+                    className="shop-card group flex flex-col p-2.5 transition-all hover:-translate-y-0.5"
+                  >
                     <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-neutral-100">
                       {item.image ? (
                         <Image
@@ -1094,14 +1348,18 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <span className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">No photo provided</span>
+                        <span className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">
+                          No photo provided
+                        </span>
                       )}
                       <span className="absolute bottom-2 left-2 rounded-full bg-[var(--overlay-paper-95)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink-black)]">
                         {item.category ?? "Recoverable item"}
                       </span>
                     </div>
                     <div className="px-1.5 pb-1 pt-2.5">
-                      <h4 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">{item.title}</h4>
+                      <h4 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
+                        {item.title}
+                      </h4>
                       <div className="mt-1.5 flex items-center justify-between">
                         <span className="font-sans tabular text-[14px] font-semibold tracking-tight text-[var(--color-ink-black)]">
                           {pricingLabel(item.pricing_type, item.price)}
@@ -1110,7 +1368,8 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                       </div>
                       <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--color-muted-gray)]">
                         <MapPinIcon className="h-3 w-3" aria-hidden="true" />
-                        {item.area ? `${item.area}, Abuja` : item.city} · {timeAgo(item.created_at)}
+                        {item.area ? `${item.area}, Abuja` : item.city} ·{" "}
+                        {timeAgo(item.created_at)}
                       </p>
                     </div>
                   </article>
@@ -1142,7 +1401,10 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
         </section>
 
         {/* CIRCULAR ECONOMY SPOTLIGHT BANNER */}
-        <section aria-label="Circular economy call to action" className="my-16 w-full">
+        <section
+          aria-label="Circular economy call to action"
+          className="my-16 w-full"
+        >
           <div className="flex flex-col-reverse items-center justify-between gap-8 rounded-[28px] bg-[var(--color-pure-white)] p-8 sm:p-12 mdlg:flex-row">
             <div className="max-w-xl text-left">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-shop-violet)]">
@@ -1152,7 +1414,9 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                 Give unwanted things another chance.
               </h2>
               <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-muted-gray)]">
-                From building offcuts in Dei-Dei to mechanic salvage in Apo and commercial spares in Garki, Pantaker connects what you don&rsquo;t need with repairers and makers who do.
+                From building offcuts in Dei-Dei to mechanic salvage in Apo and
+                commercial spares in Garki, Pantaker connects what you
+                don&rsquo;t need with repairers and makers who do.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
@@ -1184,9 +1448,16 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
         </section>
 
         {/* 7. HOW IT WORKS */}
-        <section id="how" aria-labelledby="how-heading" className="mb-8 mt-16 w-full scroll-mt-6">
+        <section
+          id="how"
+          aria-labelledby="how-heading"
+          className="mb-8 mt-16 w-full scroll-mt-6"
+        >
           <div className="mb-5 text-center">
-            <h2 id="how-heading" className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]">
+            <h2
+              id="how-heading"
+              className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]"
+            >
               How Pantaker works
             </h2>
             <p className="mt-0.5 text-[13px] text-[var(--color-muted-gray)]">
@@ -1224,33 +1495,71 @@ export function ShopLandingPage({ initialItems, categories, isLive, user }: Shop
                     aria-hidden="true"
                   />
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-gray)]">{s.step}</span>
-                <h3 className="mt-1 text-base font-semibold text-[var(--color-ink-black)]">{s.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-gray)]">{s.copy}</p>
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-gray)]">
+                  {s.step}
+                </span>
+                <h3 className="mt-1 text-base font-semibold text-[var(--color-ink-black)]">
+                  {s.title}
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-gray)]">
+                  {s.copy}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
         {/* FOOTER */}
-        <footer className="mt-16 flex w-full flex-col items-center justify-between gap-4 border-t border-[var(--color-ink-06)] pb-12 pt-8 text-[12px] text-[var(--color-muted-gray)] sm:flex-row">
+        <footer className="mt-16 flex w-full flex-col items-center justify-between gap-4 border-t border-[var(--color-ink-06)] pb-12 pt-8 text-[12px] text-[var(--color-ash-veil)] sm:flex-row">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-[var(--color-ink-black)]">Pantaker</span>
+            <span className="font-semibold text-[var(--color-ink-black)]">
+              Pantaker
+            </span>
             <span aria-hidden="true">•</span>
             <span>Abuja, FCT</span>
             <span aria-hidden="true">•</span>
             <span>© 2026 Pantaker</span>
           </div>
-          <div className="flex items-center gap-6">
-            <button type="button" onClick={() => scrollToId("departments")} className="transition-colors hover:text-[var(--color-ink-black)]">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <button
+              type="button"
+              onClick={() => scrollToId("departments")}
+              className="transition-colors hover:text-[var(--color-ink-black)]"
+            >
               Departments
             </button>
-            <button type="button" onClick={() => router.push("/marketplace")} className="transition-colors hover:text-[var(--color-ink-black)]">
+            <button
+              type="button"
+              onClick={() => router.push("/marketplace")}
+              className="transition-colors hover:text-[var(--color-ink-black)]"
+            >
               Feed
             </button>
-            <button type="button" onClick={() => scrollToId("how")} className="transition-colors hover:text-[var(--color-ink-black)]">
+            <button
+              type="button"
+              onClick={() => scrollToId("how")}
+              className="transition-colors hover:text-[var(--color-ink-black)]"
+            >
               How it works
             </button>
+            <Link
+              href="/help"
+              className="transition-colors hover:text-[var(--color-ink-black)]"
+            >
+              Help
+            </Link>
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-[var(--color-ink-black)]"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-[var(--color-ink-black)]"
+            >
+              Rules
+            </Link>
           </div>
         </footer>
       </div>

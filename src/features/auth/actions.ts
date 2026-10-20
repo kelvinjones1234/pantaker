@@ -1,26 +1,17 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { emailOtpRequestSchema, emailOtpVerifySchema } from "@/lib/validation/auth";
-import { safeRedirectPath } from "@/lib/safe-redirect";
-import { siteConfig } from "@/config/site";
-import { ensureProfile } from "@/features/auth/profile";
-import type { AuthActionState, GoogleSignInResult } from "@/features/auth/types";
+import { headers } from "next/headers";
+import { signOut } from "@/auth";
+import { cancelLoginCode, issueLoginCode, normalizeEmail } from "@/lib/auth/otp";
+import { sendLoginCodeEmail } from "@/lib/auth/email";
+import { emailOtpRequestSchema } from "@/lib/validation/auth";
+import { isPrismaConfigured } from "@/lib/prisma";
+import type { AuthActionState } from "@/features/auth/types";
 
-function isConfigured() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-}
-
-function origin() {
-  return siteConfig.url.replace(/\/$/, "");
-}
-
-function readNext(formData: FormData): string {
-  const raw = formData.get("next");
-  return safeRedirectPath(typeof raw === "string" ? raw : null, "/");
+function clientIp(value: string | null): string | null {
+  if (!value) return null;
+  const first = value.split(",")[0]?.trim();
+  return first || null;
 }
 
 /**
@@ -31,10 +22,10 @@ export async function requestEmailCodeAction(
   _prev: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  if (!isConfigured()) {
+  if (!isPrismaConfigured() || !process.env.AUTH_SECRET) {
     return {
       status: "error",
-      message: "Sign-in needs Supabase configuration. See the README to connect a project.",
+      message: "Sign-in is not configured yet. Add the database and AUTH_SECRET to .env.",
     };
   }
 
@@ -43,99 +34,44 @@ export async function requestEmailCodeAction(
     return { status: "error", errors: parsed.error.flatten().fieldErrors };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email.toLowerCase(),
-    options: { shouldCreateUser: true },
-  });
+  const email = normalizeEmail(parsed.data.email);
+  const requestHeaders = await headers();
+  const ip = clientIp(requestHeaders.get("x-forwarded-for"));
 
-  if (error) {
-    return { status: "error", message: error.message };
-  }
-
-  return {
-    status: "code_sent",
-    message: "Enter the 6-digit code we emailed you. Check your spam folder if it hasn't arrived.",
-  };
-}
-
-/**
- * Step 2: verify the emailed code. On success a session cookie is set, the
- * profile is mirrored, and the visitor is redirected to their destination.
- */
-export async function verifyEmailCodeAction(
-  _prev: AuthActionState,
-  formData: FormData,
-): Promise<AuthActionState> {
-  if (!isConfigured()) {
-    return {
-      status: "error",
-      message: "Sign-in needs Supabase configuration. See the README to connect a project.",
-    };
-  }
-
-  const parsed = emailOtpVerifySchema.safeParse({
-    email: formData.get("email"),
-    token: formData.get("token"),
-  });
-  if (!parsed.success) {
-    return { status: "error", errors: parsed.error.flatten().fieldErrors };
-  }
-
-  const next = readNext(formData);
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.verifyOtp({
-    email: parsed.data.email.toLowerCase(),
-    token: parsed.data.token,
-    type: "email",
-  });
-
-  if (error) {
-    if (/expired|invalid|token/i.test(error.message)) {
+  try {
+    const issued = await issueLoginCode(email, ip);
+    if (!issued.ok) {
       return {
         status: "error",
-        errors: { token: ["That code is invalid or has expired. Request a new one."] },
+        message:
+          issued.reason === "cooldown"
+            ? "Please wait a minute before requesting another code."
+            : "Too many codes requested. Try again later.",
       };
     }
-    return { status: "error", message: error.message };
-  }
 
-  if (data.user) {
     try {
-      await ensureProfile(data.user);
+      await sendLoginCodeEmail(email, issued.code);
     } catch {
-      // Profile mirror is best-effort; the session is still valid.
+      await cancelLoginCode(issued.id);
+      return {
+        status: "error",
+        message: "We couldn't send the email just now. Check your address and try again.",
+      };
     }
-    redirect(next);
-  }
 
-  return { status: "error", message: "Could not verify that code. Please try again." };
-}
-
-export async function startGoogleSignIn(next?: string): Promise<GoogleSignInResult> {
-  if (!isConfigured()) {
-    return { ok: false, error: "Google sign-in needs Supabase configuration." };
+    return {
+      status: "code_sent",
+      message: "Enter the 6-digit code we emailed you. Check your spam folder if it hasn't arrived.",
+    };
+  } catch {
+    return {
+      status: "error",
+      message: "We couldn't send a code just now. Please try again.",
+    };
   }
-  const target = safeRedirectPath(next ?? null, "/");
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${origin()}/auth/callback?next=${encodeURIComponent(target)}`,
-      queryParams: { access_type: "offline", prompt: "consent" },
-    },
-  });
-
-  if (error || !data.url) {
-    return { ok: false, error: error?.message ?? "Could not start Google sign-in." };
-  }
-  return { ok: true, url: data.url };
 }
 
 export async function signOutAction() {
-  if (isConfigured()) {
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-  }
-  redirect("/");
+  await signOut({ redirectTo: "/" });
 }

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPinIcon } from "@/components/brand/icons";
 import { ConditionBadge } from "@/components/ui/badge";
-import { pricingLabel, slugify, timeAgo } from "@/lib/utils";
+import { pricingLabel, timeAgo } from "@/lib/utils";
 import type { Condition } from "@/types/marketplace";
 
 export interface CardListing {
@@ -20,11 +20,11 @@ export interface CardListing {
 }
 
 /**
- * Cards link to the category listing page (the item detail page is not built
- * yet). Reused by the browse page in grid and list layouts.
+ * Cards open the listing detail page, where a buyer can message the seller or
+ * report the listing. Reused by the browse page in grid and list layouts.
  */
 function listingHref(listing: CardListing): string {
-  return listing.category ? `/marketplace/${slugify(listing.category)}` : "/marketplace";
+  return `/marketplace/listing/${listing.id}`;
 }
 
 function LocationLine({ listing }: { listing: CardListing }) {

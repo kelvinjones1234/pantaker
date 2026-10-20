@@ -1,18 +1,5 @@
 import { ChevronRightIcon } from "@/components/brand/icons";
-
-function pageWindow(page: number, totalPages: number): Array<number | "gap"> {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-  const pages: Array<number | "gap"> = [1];
-  const start = Math.max(2, page - 1);
-  const end = Math.min(totalPages - 1, page + 1);
-  if (start > 2) pages.push("gap");
-  for (let i = start; i <= end; i += 1) pages.push(i);
-  if (end < totalPages - 1) pages.push("gap");
-  pages.push(totalPages);
-  return pages;
-}
+import { pageWindow } from "@/lib/pagination";
 
 export function Pagination({
   page,

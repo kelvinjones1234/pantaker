@@ -35,7 +35,13 @@ export const createListingSchema = z
       .max(4000),
     condition: conditionSchema,
     pricing_type: pricingTypeSchema,
-    price: z.coerce.number().nonnegative("Price cannot be negative.").nullable().optional(),
+    // Whole naira only — money is never handled as a floating-point value.
+    price: z.coerce
+      .number()
+      .int("Enter a whole naira amount.")
+      .nonnegative("Price cannot be negative.")
+      .nullable()
+      .optional(),
     negotiable: z.boolean().default(false),
     quantity: z.coerce.number().positive("Quantity must be positive.").nullable().optional(),
     quantity_unit: z.string().trim().max(24).nullable().optional(),
@@ -76,12 +82,25 @@ export const reportSchema = z.object({
   details: z.string().trim().min(10, "Add a short explanation.").max(2000),
 });
 
+export const accountTypeSchema = z.enum(["individual", "business"]);
+
 export const profileSchema = z.object({
-  display_name: z.string().trim().min(2).max(80),
+  display_name: z.string().trim().min(2, "Add a display name (min 2 characters).").max(80),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_]{3,24}$/, "Use 3–24 letters, numbers, or underscores.")
+    .or(z.literal(""))
+    .optional()
+    .transform((value) => (value ? value : null)),
+  account_type: accountTypeSchema.catch("individual"),
   city: z.string().trim().max(80).nullable().optional(),
   area: z.string().trim().max(120).nullable().optional(),
   bio: z.string().trim().max(500).nullable().optional(),
 });
+
+export type ProfileInput = z.infer<typeof profileSchema>;
 
 export const marketplaceFilterSchema = z.object({
   q: z.string().max(120).optional().default(""),
@@ -98,3 +117,33 @@ export const marketplaceFilterSchema = z.object({
 });
 
 export type MarketplaceFilters = z.infer<typeof marketplaceFilterSchema>;
+
+/** Whether a creation submission should be kept private or sent to moderation. */
+export const listingIntentSchema = z.enum(["draft", "publish"]);
+export type ListingIntent = z.infer<typeof listingIntentSchema>;
+
+export const sellerListingSortSchema = z.enum([
+  "newest",
+  "oldest",
+  "updated",
+  "price_asc",
+  "price_desc",
+  "title_asc",
+]);
+export type SellerListingSort = z.infer<typeof sellerListingSortSchema>;
+
+/**
+ * Filters for the seller's own listing management page. Every field is lenient
+ * (`.catch`) so an invalid or tampered query parameter falls back to a safe
+ * default instead of throwing — the value is still validated before use.
+ */
+export const sellerListingFilterSchema = z.object({
+  q: z.string().trim().max(120).catch(""),
+  status: z
+    .enum(["", "draft", "pending_review", "published", "rejected", "sold", "archived"])
+    .catch(""),
+  category: z.string().max(60).catch(""),
+  sort: sellerListingSortSchema.catch("newest"),
+  page: z.coerce.number().int().min(1).catch(1),
+});
+export type SellerListingFilters = z.infer<typeof sellerListingFilterSchema>;

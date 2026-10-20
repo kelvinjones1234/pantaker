@@ -19,8 +19,11 @@ export interface UploadedImage {
   status: "uploading" | "done" | "error";
   progress: number;
   error?: string;
-  /** Kept so a failed upload can be retried without re-picking the file. */
-  file: File;
+  /**
+   * Kept so a failed upload can be retried without re-picking the file. Absent
+   * for images that already exist on the server (editing an existing listing).
+   */
+  file?: File;
 }
 
 interface ImageUploaderProps {
@@ -248,7 +251,9 @@ export function ImageUploader({
 
     onChange((prev) => [...prev, ...pending]);
     if (uploadEnabled) {
-      pending.forEach((item) => runUpload(item.file, item.localId));
+      pending.forEach((item) => {
+        if (item.file) runUpload(item.file, item.localId);
+      });
     } else {
       setAnnouncement(
         `${accepted.length} photo${accepted.length === 1 ? "" : "s"} added (preview only).`,
@@ -284,7 +289,7 @@ export function ImageUploader({
       ),
     );
     const target = images.find((item) => item.localId === localId);
-    if (target) runUpload(target.file, localId);
+    if (target?.file) runUpload(target.file, localId);
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {

@@ -1,17 +1,24 @@
-import type { NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { NextResponse, type NextRequest } from "next/server";
+import { productionConfigError } from "@/lib/env";
 
 /**
- * Refreshes the Supabase auth session on every navigation and keeps the
- * session cookies in sync between the browser and Server Components.
+ * Refuses to serve a misconfigured production deployment. NextAuth JWT sessions
+ * do not need middleware cookie refresh; route guards establish identity in
+ * server components and actions.
  */
-export async function middleware(request: NextRequest) {
-  return updateSession(request);
+export function middleware(_request: NextRequest) {
+  const configError = productionConfigError();
+  if (configError) {
+    return new NextResponse(configError, {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Everything except Next internals and static assets.
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
   ],
 };

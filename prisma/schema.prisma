@@ -1,28 +1,361 @@
-// Pantaker — Prisma owns the auth-facing Profile model only.
-// Identity/credentials live in Supabase Auth (auth.users); a Profile row is
-// upserted by the app keyed to that user id. Domain tables (listings,
-// categories, images, inquiries) stay managed in Supabase and are queried via
-// the Supabase client, not Prisma.
+// Pantaker data model.
+//
+// SQL migrations in supabase/migrations are the schema source of truth. Prisma
+// is introspected from those tables and owns all application reads/writes.
+// Auth identity lives in public.users; Supabase Auth/RLS/Data API are no longer
+// used by the application.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+enum AdminRole {
+  super_admin
+  moderator
+
+  @@map("admin_role")
+}
+
+model User {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String     @unique
+  email_verified  DateTime?  @db.Timestamptz(6)
+  name            String?
+  image           String?
+  admin_role      AdminRole?
+  session_version Int        @default(1)
+  created_at      DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime   @default(now()) @db.Timestamptz(6)
+
+  profile               Profile?
+  account_restriction   AccountRestriction?
+  email_change_requests EmailChangeRequest[]
+  listings              Listing[]
+  buyer_inquiries       Inquiry[]            @relation("InquiryBuyer")
+  seller_inquiries      Inquiry[]            @relation("InquirySeller")
+  reports_made          Report[]             @relation("ReportReporter")
+  reports_received      Report[]             @relation("ReportReportedUser")
+  reports_resolved      Report[]             @relation("ReportResolvedBy")
+  upload_requests       UploadRequest[]
+
+  @@map("users")
+}
+
 model Profile {
-  id           String   @id @db.Uuid
-  display_name String?
-  username     String?  @unique
-  avatar_path  String?
-  city         String?
-  area         String?
-  account_type String?
-  bio          String?
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  id                    String    @id @db.Uuid
+  display_name          String?
+  username              String?
+  avatar_path           String?
+  city                  String?
+  area                  String?
+  account_type          String    @default("individual")
+  bio                   String?
+  default_area          String?
+  default_pickup_notes  String?
+  deletion_requested_at DateTime? @db.Timestamptz(6)
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [id], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model LoginOtp {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String
+  code_hash   String
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  attempts    Int       @default(0)
+  ip          String?
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email, created_at(sort: Desc)])
+  @@index([expires_at])
+  @@index([ip, created_at(sort: Desc)])
+  @@map("login_otps")
+}
+
+model EmailChangeRequest {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String    @db.Uuid
+  new_email   String
+  token_hash  String    @unique
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at(sort: Desc)])
+  @@map("email_change_requests")
+}
+
+model AccountRestriction {
+  user_id    String    @id @db.Uuid
+  status     String
+  reason     String
+  starts_at  DateTime  @default(now()) @db.Timestamptz(6)
+  ends_at    DateTime? @db.Timestamptz(6)
+  created_by String    @db.Uuid
+  updated_by String    @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([status, updated_at(sort: Desc)])
+  @@map("account_restrictions")
+}
+
+model AdminAuditEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actor_id    String?  @db.Uuid
+  action      String
+  target_type String
+  target_id   String
+  reason      String?
+  before      Json?
+  after       Json?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([actor_id, created_at(sort: Desc)])
+  @@index([created_at(sort: Desc)])
+  @@index([target_type, target_id, created_at(sort: Desc)])
+  @@map("admin_audit_events")
+}
+
+model Block {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  blocker_id String   @db.Uuid
+  blocked_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([blocker_id, blocked_id])
+  @@index([blocked_id])
+  @@map("blocks")
+}
+
+model Category {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  parent_id   String?  @db.Uuid
+  icon_key    String?
+  sort_order  Int      @default(0)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  parent   Category?  @relation("CategoryParent", fields: [parent_id], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryParent")
+  listings Listing[]
+
+  @@index([is_active, sort_order, name])
+  @@index([parent_id])
+  @@map("categories")
+}
+
+model CategoryAuditEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id String?  @db.Uuid
+  actor_id    String?  @db.Uuid
+  action      String
+  before      Json?
+  after       Json?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([category_id, created_at(sort: Desc)])
+  @@index([created_at(sort: Desc)])
+  @@map("category_audit_events")
+}
+
+model Inquiry {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listing_id          String    @db.Uuid
+  buyer_id            String    @db.Uuid
+  seller_id           String    @db.Uuid
+  message             String    @default("")
+  status              String    @default("open")
+  last_message_at     DateTime  @default(now()) @db.Timestamptz(6)
+  buyer_last_read_at  DateTime? @db.Timestamptz(6)
+  seller_last_read_at DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  listing Listing @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  buyer   User    @relation("InquiryBuyer", fields: [buyer_id], references: [id], onDelete: Cascade)
+  seller  User    @relation("InquirySeller", fields: [seller_id], references: [id], onDelete: Cascade)
+
+  messages Message[]
+  reports  Report[]
+  sales    Sale[]
+
+  @@index([buyer_id, last_message_at(sort: Desc)])
+  @@index([listing_id])
+  @@index([seller_id, last_message_at(sort: Desc)])
+  @@map("inquiries")
+}
+
+model ListingImage {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listing_id   String   @db.Uuid
+  storage_path String
+  alt_text     String?
+  sort_order   Int      @default(0)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  listing Listing @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+
+  @@index([listing_id, sort_order])
+  @@index([storage_path])
+  @@map("listing_images")
+}
+
+model Listing {
+  id            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seller_id     String                   @db.Uuid
+  category_id   String?                  @db.Uuid
+  title         String
+  slug          String                   @unique
+  description   String                   @default("")
+  condition     String                   @default("used")
+  item_status   String                   @default("draft")
+  pricing_type  String                   @default("fixed")
+  price         Int?
+  negotiable    Boolean                  @default(false)
+  quantity      Decimal?                 @default(1) @db.Decimal(12, 3)
+  quantity_unit String?                  @default("item")
+  city          String                   @default("Abuja")
+  area          String?
+  pickup_notes  String?
+  published_at  DateTime?                @db.Timestamptz(6)
+  expires_at    DateTime?                @db.Timestamptz(6)
+  created_at    DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime                 @default(now()) @db.Timestamptz(6)
+  search_vector Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, ((((COALESCE(title, ''::text) || ' '::text) || COALESCE(description, ''::text)) || ' '::text) || COALESCE(area, ''::text)))"))
+
+  seller    User           @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  category  Category?      @relation(fields: [category_id], references: [id])
+  images    ListingImage[]
+  inquiries Inquiry[]
+  reports   Report[]
+  sale      Sale?
+
+  @@index([category_id, item_status])
+  @@index([item_status, published_at(sort: Desc)], where: raw("(item_status = 'published'::text)"))
+  @@index([search_vector], type: Gin)
+  @@index([seller_id, item_status, updated_at(sort: Desc)])
+  @@map("listings")
+}
+
+model Message {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inquiry_id String   @db.Uuid
+  sender_id  String   @db.Uuid
+  body       String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  inquiry Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+
+  @@index([inquiry_id, created_at])
+  @@map("messages")
+}
+
+model NotificationPreference {
+  user_id         String   @id @db.Uuid
+  messages        Boolean  @default(true)
+  sale_updates    Boolean  @default(true)
+  listing_updates Boolean  @default(true)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("notification_preferences")
+}
+
+model Notification {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  type            String
+  title           String
+  body            String?
+  href            String
+  listing_id      String?   @db.Uuid
+  conversation_id String?   @db.Uuid
+  sale_id         String?   @db.Uuid
+  actor_id        String?   @db.Uuid
+  read_at         DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  dedupe_key      String?
+
+  @@unique([user_id, dedupe_key], where: raw("(dedupe_key IS NOT NULL)"))
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([user_id], where: raw("(read_at IS NULL)"))
+  @@map("notifications")
+}
+
+model Report {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporter_id      String    @db.Uuid
+  listing_id       String?   @db.Uuid
+  reported_user_id String?   @db.Uuid
+  conversation_id  String?   @db.Uuid
+  reason           String
+  details          String?
+  status           String    @default("open")
+  resolution_note  String?
+  resolved_by      String?   @db.Uuid
+  resolved_at      DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  reporter      User     @relation("ReportReporter", fields: [reporter_id], references: [id], onDelete: Cascade)
+  reported_user User?    @relation("ReportReportedUser", fields: [reported_user_id], references: [id])
+  resolved_user User?    @relation("ReportResolvedBy", fields: [resolved_by], references: [id])
+  listing       Listing? @relation(fields: [listing_id], references: [id])
+  conversation  Inquiry? @relation(fields: [conversation_id], references: [id])
+
+  @@index([listing_id])
+  @@index([reporter_id, created_at(sort: Desc)])
+  @@index([status, created_at(sort: Desc)])
+  @@map("reports")
+}
+
+model Sale {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listing_id        String    @unique(map: "sales_one_active_per_listing", where: raw("(status = ANY (ARRAY['awaiting_confirmation'::text, 'reserved'::text, 'collection_arranged'::text]))")) @db.Uuid
+  seller_id         String    @db.Uuid
+  buyer_id          String?   @db.Uuid
+  buyer_label       String?
+  source_inquiry_id String?   @db.Uuid
+  agreed_price      Int?
+  status            String    @default("awaiting_confirmation")
+  collection_notes  String?
+  completed_at      DateTime? @db.Timestamptz(6)
+  cancelled_at      DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  listing        Listing  @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  source_inquiry Inquiry? @relation(fields: [source_inquiry_id], references: [id])
+
+  @@index([listing_id])
+  @@index([seller_id, created_at(sort: Desc)])
+  @@map("sales")
+}
+
+model UploadRequest {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at(sort: Desc)])
+  @@map("upload_requests")
 }
