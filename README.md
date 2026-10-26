@@ -4,14 +4,14 @@ A circular-economy marketplace for unwanted items, scrap, and recoverable
 materials. Launch market: **Abuja, FCT, Nigeria**.
 
 Pantaker is a Next.js app backed by PostgreSQL, Prisma, and NextAuth, with
-Cloudflare Images for listing photos. Sales are recorded by the seller after an
-off-platform handover; Pantaker does not process payments or hold funds.
+Cloudflare R2 for listing photos and avatars. Sales are recorded by the seller
+after an off-platform handover; Pantaker does not process payments or hold funds.
 
 ## Quickstart
 
 ```bash
 npm install
-# create .env in the project root and fill in the values you need
+cp .env.example .env         # then fill in the values you need
 npm run dev                  # http://localhost:3000
 ```
 
@@ -28,6 +28,9 @@ middleware returns `503` unless the required environment is set.
 | `npm run start` | Run the production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest unit tests |
+| `npm run r2:check` | Verify Cloudflare R2 credentials |
+| `npm run images:migrate` | Migrate legacy listing/profile images to R2 |
+| `npm run images:cleanup` | Find or delete unreferenced uploaded images |
 
 ## Database migrations
 
@@ -57,21 +60,76 @@ commands. Database access is owner-level through Prisma; the browser never talks
 to Postgres directly. Migrations must be applied with a role that can alter the
 schema.
 
-### Local image storage (development only)
+## Cloudflare R2
+
+Listing photos and avatars are stored in Cloudflare R2. R2 is required in
+production: the middleware returns `503` if the credentials are missing, and
+`PANTAKER_IMAGE_MODE=local` is rejected outside development.
+
+1. Create an R2 bucket.
+2. Create an R2 API token with **Object Read & Write** permission for that
+   bucket, then copy its Access Key ID and Secret Access Key.
+3. Copy the S3 endpoint: `https://<account-id>.r2.cloudflarestorage.com`.
+4. Enable public access through the bucket's `r2.dev` URL or a custom domain.
+5. Add the values to `.env`:
+
+```dotenv
+PANTAKER_IMAGE_MODE=r2
+CLOUDFLARE_R2_BUCKET=
+CLOUDFLARE_R2_ACCESS_KEY=
+CLOUDFLARE_R2_SECRET_KEY=
+CLOUDFLARE_R2_BUCKET_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+NEXT_PUBLIC_R2_PUBLIC_DOMAIN=https://<public-bucket-domain>
+```
+
+The access key and secret are server-only; never prefix them with
+`NEXT_PUBLIC_`. `NEXT_PUBLIC_R2_PUBLIC_DOMAIN` must be available at build time so
+Next.js can allow the image host. Uploads are proxied through the Next.js server,
+so R2 does not need browser CORS rules for uploads.
+
+Verify write and delete access before uploading (the check creates and removes a
+temporary `healthcheck/` object):
+
+```bash
+npm run r2:check
+```
+
+The browser uploads to `/api/images/upload`, which authenticates the account,
+checks listing ownership, validates and converts the image with `sharp`, and
+writes it to R2. Only the object key is stored in Postgres. Public delivery uses
+`https://<public-bucket-domain>/<object-key>`.
+
+Object keys are scoped by owner:
+
+- `listings/<user-id>/<uuid>.webp`
+- `profiles/<user-id>/<uuid>.webp`
+- `migrated/listings/<listing-id>/<sha256>.webp`
+- `migrated/profiles/<user-id>/<sha256>.webp`
+
+The server accepts images up to 10 MB and converts them to WebP. On Vercel,
+serverless request bodies are capped at about 4.5 MB; lower the configured limit
+or deploy the route on infrastructure that accepts larger request bodies.
+
+Existing `local-*` image IDs from development are not valid R2 objects;
+re-upload those photos after switching modes. Legacy Cloudflare Images IDs and
+`media/` objects remain readable. `NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_HASH`
+is optional and only needed to render legacy Cloudflare Images IDs or migrate
+them.
+
+## Local image storage (development only)
 
 For local development you can store listing and avatar photos on disk instead of
-configuring Cloudflare:
+configuring R2:
 
 ```dotenv
 PANTAKER_IMAGE_MODE=local
 LOCAL_UPLOAD_DIR=.local-uploads
-LOCAL_UPLOAD_SECRET=change-me-for-local-dev
 ```
 
 Uploads are written to `.local-uploads/` and served from
-`/api/local-images/<id>`; `listing_images.storage_path` stores the same opaque
-image ids. Files are only available on the machine running the dev server, so
-switch to Cloudflare Images before deploying.
+`/api/local-images/<id>`; `listing_images.storage_path` stores the local image
+id. Files are only available on the machine running the dev server, so switch to
+R2 before deploying. Local image mode is rejected in production.
 
 ### Admin bootstrap
 
@@ -99,11 +157,12 @@ Credentials live in the project-root `.env` file (gitignored). Key groups:
   in production).
 - **Email:** `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`,
   `EMAIL_SERVER_PASSWORD`, `EMAIL_FROM` (or a single `EMAIL_SERVER` URL).
-- **Local images:** `PANTAKER_IMAGE_MODE=local`, `LOCAL_UPLOAD_DIR`,
-  optional `LOCAL_UPLOAD_SECRET`.
-- **Cloudflare Images:** `CLOUDFLARE_ACCOUNT_ID`,
-  `CLOUDFLARE_IMAGES_API_TOKEN`, `NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_HASH`,
-  optional `NEXT_PUBLIC_CLOUDFLARE_IMAGES_VARIANT`.
+- **Cloudflare R2 (required in production):** `CLOUDFLARE_R2_BUCKET`,
+  `CLOUDFLARE_R2_ACCESS_KEY`, `CLOUDFLARE_R2_SECRET_KEY`,
+  `CLOUDFLARE_R2_BUCKET_ENDPOINT`, `NEXT_PUBLIC_R2_PUBLIC_DOMAIN`.
+- **Local images (development only):** `PANTAKER_IMAGE_MODE=local`,
+  `LOCAL_UPLOAD_DIR`.
+- **Legacy images (optional):** `NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_HASH`.
 
 Secrets are server-only and must never be prefixed with `NEXT_PUBLIC_`.
 
@@ -135,20 +194,56 @@ Email delivery uses SMTP (Gmail app passwords work). In production,
 
 ## Image uploads
 
-Listing photos upload directly from the browser to Cloudflare Images via
-`src/app/api/images/direct-upload/route.ts`. The route requires a signed-in,
-writable account, rate-limits upload URLs per user per hour, and sanitizes
-metadata before issuing a one-time upload URL. Removed listing images are cleaned
-from Cloudflare only after their database rows are gone and the asset is no longer
-referenced.
+Listing photos and avatars upload to `src/app/api/images/upload/route.ts`. The
+route requires a signed-in, writable account, rate-limits uploads per user per
+hour, validates ownership of the listing, checks the declared and actual image
+type, and converts the image to WebP before storing it. The delete route at
+`src/app/api/images/route.ts` only removes an object when the caller owns its
+prefix and no database row references it. Removed listing images are cleaned
+from R2/local storage only after their database rows are gone and the object is
+no longer referenced.
+
+### Migrating legacy images
+
+Dry-run first, then migrate in batches:
+
+```bash
+npm run images:migrate -- --dry-run
+npm run images:migrate -- --type listing --limit 50
+npm run images:migrate -- --type profile --limit 50
+```
+
+The script reads `DATABASE_URL`/`DIRECT_URL`, downloads legacy `media/`, local, or
+Cloudflare Images references, converts them to WebP, uploads deterministic
+`migrated/` keys, and updates the row only after the object exists. Re-run with
+the same flags to continue. Existing `storage_path`/`avatar_path` values are
+left in place until their replacement upload succeeds.
+
+### Cleaning abandoned uploads
+
+Uploads that are removed before saving are deleted by the browser. To find
+objects left behind by closed tabs or interrupted requests, run the dry-run
+cleanup, then apply it:
+
+```bash
+npm run images:cleanup -- --min-age-hours 24
+npm run images:cleanup -- --min-age-hours 24 --apply
+```
+
+The script only considers `listings/`, `profiles/`, and `migrated/` objects older
+than the age threshold and refuses to delete any key still referenced by a
+listing image, profile avatar, or category icon. Schedule the `--apply` command
+to run daily with the same R2 and database credentials as the app.
 
 ## Operational notes
 
-- Production fails closed with `503` when required env vars are missing or
-  `NEXT_PUBLIC_SITE_URL` points at localhost (see `src/lib/env.ts`).
+- Production fails closed with `503` when required env vars (including
+  Cloudflare R2) are missing, `NEXT_PUBLIC_SITE_URL` points at localhost, or
+  local image mode is enabled (see `src/lib/env.ts`).
 - Account deletion removes domain data in a single Postgres transaction through
   `admin_delete_account_data()`, then removes unreferenced images.
 - Messaging polls every few seconds while the tab is visible; it does not use
   Realtime or a browser database client.
 - There are no fabricated metrics, sellers, or ratings. Sample data is only used
   when the marketplace is not configured.
+# pantaker
