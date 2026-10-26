@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { uploadLimits } from "@/config/site";
+import {
+  isLegacyImageId,
+  isSafeObjectKey,
+} from "@/lib/storage/object-keys";
 
 export const conditionSchema = z.enum([
   "working",
@@ -11,16 +15,38 @@ export const conditionSchema = z.enum([
   "unclassified",
 ]);
 
-/** Cloudflare Images ids: URL-safe, 1–64 chars. */
-export const cloudflareImageIdSchema = z
+function isLegacyHttpImageUrl(value: string): boolean {
+  if (value.length > 2048 || !/^https?:\/\//i.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+/** R2 object keys plus read-only legacy references retained during migration. */
+export const storedImageIdSchema = z
   .string()
   .trim()
-  .regex(/^[A-Za-z0-9_-]{1,64}$/, "One of the uploaded photos is invalid.");
+  .min(1)
+  .max(2048)
+  .refine(
+    (value) =>
+      isSafeObjectKey(value) ||
+      isLegacyImageId(value) ||
+      isLegacyHttpImageUrl(value),
+    "One of the uploaded photos is invalid.",
+  );
 
-/** Ordered list of uploaded image ids (first is the cover). Optional. */
+/** Ordered list of uploaded image keys (first is the cover). Optional. */
 export const listingImageIdsSchema = z
-  .array(cloudflareImageIdSchema)
-  .max(uploadLimits.maxImages, `You can add up to ${uploadLimits.maxImages} photos.`);
+  .array(storedImageIdSchema)
+  .max(uploadLimits.maxImages, `You can add up to ${uploadLimits.maxImages} photos.`)
+  .refine(
+    (values) => new Set(values).size === values.length,
+    "Each photo can only be added once.",
+  );
 
 export const pricingTypeSchema = z.enum(["fixed", "negotiable", "free", "offer"]);
 

@@ -5,7 +5,7 @@ import { Logo } from "@/components/brand/Logo";
 import { getAuthUser, getProfile } from "@/features/auth/queries";
 import { isAuthConfigured } from "@/features/auth/authorization";
 import { getCategories } from "@/features/listings/queries";
-import { isCloudflareImagesConfigured } from "@/lib/cloudflare-images";
+import { isImageStorageConfigured } from "@/lib/image-storage";
 import { ListingForm } from "@/components/seller/ListingForm";
 
 export const metadata: Metadata = {
@@ -60,7 +60,7 @@ export default async function SellPage() {
           mode="create"
           categories={categories}
           isLive={isLive}
-          imageUploadsConfigured={isCloudflareImagesConfigured()}
+          imageUploadsConfigured={isImageStorageConfigured()}
           defaults={{
             area: profile?.default_area ?? null,
             pickup_notes: profile?.default_pickup_notes ?? null,

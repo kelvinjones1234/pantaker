@@ -28,11 +28,20 @@ export default async function BuyerInboxPage() {
       <SellerPageHeader
         title="Messages"
         description="Conversations you've started about listings. Everything stays tied to the listing it's about."
-      />
+      >
+        <Link
+          href="/seller/messages"
+          className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+        >
+          Selling messages
+        </Link>
+      </SellerPageHeader>
 
       {inbox.length === 0 ? (
         <SellerEmptyState
-          icon={<ChatIcon className="h-6 w-6 text-[var(--color-shop-violet)]" />}
+          icon={
+            <ChatIcon className="h-6 w-6 text-[var(--color-shop-violet)]" />
+          }
           heading="No conversations yet"
           copy="Message a seller from any listing and the conversation will appear here, with its message history kept on Pantaker — not in your browser."
         />

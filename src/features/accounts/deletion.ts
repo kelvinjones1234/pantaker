@@ -9,7 +9,7 @@ const GENERIC_ERROR =
 
 /**
  * Delete an account and its domain data in one Postgres transaction, then remove
- * unreferenced Cloudflare assets. The database function records the audit event
+ * unreferenced R2 objects. The database function records the audit event
  * and deletes the identity row last.
  */
 export async function deleteAccountCompletely(
@@ -39,13 +39,20 @@ export async function deleteAccountCompletely(
       }
     }
 
-    const listings = await prisma.listing.findMany({
-      where: { seller_id: userId },
-      select: { images: { select: { storage_path: true } } },
-    });
+    const [listings, profile] = await Promise.all([
+      prisma.listing.findMany({
+        where: { seller_id: userId },
+        select: { images: { select: { storage_path: true } } },
+      }),
+      prisma.profile.findUnique({
+        where: { id: userId },
+        select: { avatar_path: true },
+      }),
+    ]);
     const imagePaths = listings.flatMap((listing) =>
       listing.images.map((image) => image.storage_path).filter(Boolean),
     );
+    if (profile?.avatar_path) imagePaths.push(profile.avatar_path);
 
     await withServiceContext(actorId, (tx) =>
       tx.$executeRaw`select public.admin_delete_account_data(${userId}::uuid)`,

@@ -1,12 +1,10 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { uploadLimits } from "@/config/site";
 
 /**
  * Development-only image storage. Files live under `.local-uploads/` on the
  * machine running `next dev`; the id format matches the existing
- * `cloudflareImageIdSchema` so database rows stay compatible.
+ * `storedImageIdSchema` so database rows stay compatible.
  */
 
 const ID_PATTERN =
@@ -35,38 +33,22 @@ export function localImageUrl(id: string): string {
   return `/api/local-images/${encodeURIComponent(id)}`;
 }
 
-function secret(): string {
-  return process.env.LOCAL_UPLOAD_SECRET ?? "pantaker-local-dev-upload-secret";
-}
-
-function signature(id: string, userId: string, expires: number): string {
-  return createHmac("sha256", secret()).update(`${id}:${userId}:${expires}`).digest("hex");
-}
-
-export function createUploadToken(id: string, userId: string, ttlMs = 15 * 60 * 1000): string {
-  const expires = Date.now() + ttlMs;
-  return `${expires}.${signature(id, userId, expires)}`;
-}
-
-export function verifyUploadToken(id: string, userId: string, token: string): boolean {
-  const [expiresRaw, provided] = token.split(".");
-  const expires = Number(expiresRaw);
-  if (!Number.isFinite(expires) || expires < Date.now() || !provided) return false;
-  const expected = signature(id, userId, expires);
-  if (expected.length !== provided.length) return false;
-  return timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
-}
-
-export function validateLocalImage(file: File): string | null {
-  if (!(uploadLimits.allowedMimeTypes as readonly string[]).includes(file.type)) {
-    return "Use a JPG, PNG, or WebP image.";
-  }
-  if (file.size > uploadLimits.maxBytes) {
-    return `Each photo must be under ${Math.round(
-      uploadLimits.maxBytes / (1024 * 1024),
-    )}MB.`;
-  }
-  return null;
+export async function saveLocalImageBytes(
+  id: string,
+  userId: string,
+  bytes: Buffer,
+  file: { mime: string; name: string },
+): Promise<void> {
+  const directory = localImagesDirectory();
+  await mkdir(directory, { recursive: true });
+  const sidecar: Sidecar = {
+    mime: file.mime || "application/octet-stream",
+    name: file.name.slice(0, 200),
+    size: bytes.byteLength,
+    userId,
+  };
+  await writeFile(path.join(directory, id), bytes);
+  await writeFile(path.join(directory, `${id}.json`), JSON.stringify(sidecar));
 }
 
 export async function saveLocalImage(
@@ -74,17 +56,21 @@ export async function saveLocalImage(
   userId: string,
   file: File,
 ): Promise<void> {
-  const directory = localImagesDirectory();
-  await mkdir(directory, { recursive: true });
   const bytes = Buffer.from(await file.arrayBuffer());
-  const sidecar: Sidecar = {
-    mime: file.type || "application/octet-stream",
-    name: file.name.slice(0, 200),
-    size: bytes.byteLength,
-    userId,
-  };
-  await writeFile(path.join(directory, id), bytes);
-  await writeFile(path.join(directory, `${id}.json`), JSON.stringify(sidecar));
+  await saveLocalImageBytes(id, userId, bytes, {
+    mime: file.type,
+    name: file.name,
+  });
+}
+
+export async function localImageExists(id: string): Promise<boolean> {
+  if (!isLocalImageId(id)) return false;
+  try {
+    await readFile(path.join(localImagesDirectory(), id));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function readLocalImage(

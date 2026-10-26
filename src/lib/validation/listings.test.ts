@@ -72,7 +72,7 @@ describe("listing image ids", () => {
     expect(listingImageIdsSchema.safeParse([]).success).toBe(true);
   });
 
-  it("accepts ordered Cloudflare image ids", () => {
+  it("accepts ordered R2 object keys", () => {
     const r = listingImageIdsSchema.safeParse(["aB3-_x", "Zz09"]);
     expect(r.success).toBe(true);
   });

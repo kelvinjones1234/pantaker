@@ -3,6 +3,11 @@ const REQUIRED_PRODUCTION_ENV = [
   "AUTH_SECRET",
   "NEXT_PUBLIC_SITE_URL",
   "NEXT_PUBLIC_SUPPORT_EMAIL",
+  "CLOUDFLARE_R2_BUCKET",
+  "CLOUDFLARE_R2_ACCESS_KEY",
+  "CLOUDFLARE_R2_SECRET_KEY",
+  "CLOUDFLARE_R2_BUCKET_ENDPOINT",
+  "NEXT_PUBLIC_R2_PUBLIC_DOMAIN",
 ] as const;
 
 function isLocalHost(value: string): boolean {
@@ -31,6 +36,10 @@ function emailIsConfigured(): boolean {
  */
 export function productionConfigError(): string | null {
   if (process.env.NODE_ENV !== "production") return null;
+
+  if (process.env.PANTAKER_IMAGE_MODE === "local") {
+    return "Pantaker is not configured for production. PANTAKER_IMAGE_MODE=local is development-only; configure R2 image storage.";
+  }
 
   const missing: string[] = REQUIRED_PRODUCTION_ENV.filter((key) => !process.env[key]?.trim());
   if (!emailIsConfigured()) missing.push("EMAIL_SERVER or EMAIL_SERVER_* + EMAIL_FROM");

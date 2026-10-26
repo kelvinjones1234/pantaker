@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import Image from "next/image";
+import { StorageImage } from "@/components/ui/storage-image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -962,12 +963,13 @@ export function ShopLandingPage({
           >
             {activeFeature.image && (
               <div className="absolute inset-0 z-0" aria-hidden="true">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <StorageImage
                   src={activeFeature.image}
                   alt=""
-                  className="h-full w-full object-cover object-center"
-                  loading="eager"
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-[var(--overlay-ink-60)]" />
               </div>
@@ -1055,12 +1057,12 @@ export function ShopLandingPage({
                       aria-label={`Search for ${item.title}`}
                     >
                       {item.image ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <StorageImage
                           src={item.image}
                           alt={item.title}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          fill
+                          sizes="(min-width: 1024px) 230px, 50vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
                         <span className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--ink-on-dark-70)]">

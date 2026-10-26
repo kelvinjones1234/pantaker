@@ -103,7 +103,7 @@ export function CategoryForm({
           label="Slug"
           htmlFor={slugId}
           error={errors.slug}
-          hint="Lowercase letters, numbers, and hyphens. This is the public URL."
+          hint=""
           required
         >
           <input

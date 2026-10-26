@@ -3,10 +3,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRightIcon, SearchIcon, XIcon } from "@/components/brand/icons";
+import {
+  ArrowRightIcon,
+  PlusIcon,
+  SearchIcon,
+  XIcon,
+} from "@/components/brand/icons";
 import { Logo } from "@/components/brand/Logo";
 
-export function MarketplaceHeader({ initialQuery = "" }: { initialQuery?: string }) {
+export function MarketplaceHeader({
+  initialQuery = "",
+  user = null,
+}: {
+  initialQuery?: string;
+  user?: { email?: string | null; isAdmin?: boolean } | null;
+}) {
   const router = useRouter();
   const [value, setValue] = useState(initialQuery);
 
@@ -87,13 +98,37 @@ export function MarketplaceHeader({ initialQuery = "" }: { initialQuery?: string
           >
             Notifications
           </Link>
+          <Link
+            href={user ? "/seller" : "/login?next=/seller"}
+            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+          >
+            {user ? "Seller Centre" : "Sign in"}
+          </Link>
+          {user?.isAdmin && (
+            <Link
+              href="/admin"
+              className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+            >
+              Admin
+            </Link>
+          )}
         </nav>
 
         <Link
-          href="/sell"
-          className="shrink-0 cursor-pointer rounded-full bg-[var(--color-ink-black)] px-4 py-2.5 text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 sm:text-sm"
+          href={user ? "/seller" : "/login?next=/seller"}
+          aria-label={user ? "Open seller dashboard" : "Sign in to Pantaker"}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 sm:h-10 sm:w-10"
         >
-          List item
+          {user?.email?.[0]?.toUpperCase() ?? "P"}
+        </Link>
+
+        <Link
+          href="/sell"
+          aria-label="List an item"
+          className="flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--color-ink-black)] px-3 text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 sm:h-auto sm:px-4 sm:py-2.5 sm:text-sm"
+        >
+          <PlusIcon className="h-4 w-4 sm:hidden" />
+          <span className="hidden sm:inline">List item</span>
         </Link>
       </div>
     </header>

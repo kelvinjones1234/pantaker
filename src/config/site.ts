@@ -24,8 +24,20 @@ export const siteConfig = {
 
 export const uploadLimits = {
   maxImages: 3,
-  maxBytes: 5 * 1024 * 1024, // 5MB per image
-  allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  maxBytes: 10 * 1024 * 1024,
+  allowedMimeTypes: [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+  ],
+  allowedFormats: ["jpeg", "png", "webp", "avif"],
+  maxInputPixels: 40_000_000,
+  maxInputEdge: 12_000,
+  minInputEdge: 16,
+  listingMaxEdge: 2400,
+  profileEdge: 512,
+  webpQuality: 82,
 } as const;
 
 /**

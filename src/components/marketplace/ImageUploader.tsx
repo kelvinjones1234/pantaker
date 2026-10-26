@@ -4,15 +4,15 @@ import { useId, useRef, useState, type Dispatch, type SetStateAction } from "rea
 import { uploadLimits } from "@/config/site";
 import { ImagePlusIcon, PlusIcon, TrashIcon } from "@/components/brand/icons";
 import {
-  requestDirectUpload,
-  uploadToCloudflare,
+  deleteUploadedImage,
+  uploadImageFile,
   validateImageFile,
 } from "@/lib/image-upload";
 
 export interface UploadedImage {
   /** Stable client key so progress updates survive reordering. */
   localId: string;
-  /** Cloudflare image id — only set once the upload finishes. */
+  /** R2 object key — only set once the upload finishes. */
   id: string;
   name: string;
   previewUrl: string;
@@ -32,6 +32,8 @@ interface ImageUploaderProps {
   disabled?: boolean;
   /** When false, photos are added as local previews and never uploaded. */
   uploadEnabled?: boolean;
+  /** Existing listing id, used to re-check ownership during an edit. */
+  listingId?: string;
 }
 
 const MAX = uploadLimits.maxImages;
@@ -176,6 +178,7 @@ export function ImageUploader({
   onChange,
   disabled = false,
   uploadEnabled = true,
+  listingId,
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -193,16 +196,21 @@ export function ImageUploader({
   const runUpload = (file: File, localId: string) => {
     void (async () => {
       try {
-        const ticket = await requestDirectUpload({ source: "sell-form" });
-        await uploadToCloudflare(ticket.uploadURL, file, (percent) => {
-          onChange((prev) =>
-            prev.map((item) => (item.localId === localId ? { ...item, progress: percent } : item)),
-          );
-        });
+        const key = await uploadImageFile(
+          file,
+          { purpose: "listing", listingId },
+          (percent) => {
+            onChange((prev) =>
+              prev.map((item) =>
+                item.localId === localId ? { ...item, progress: percent } : item,
+              ),
+            );
+          },
+        );
         onChange((prev) =>
           prev.map((item) =>
             item.localId === localId
-              ? { ...item, id: ticket.id, status: "done", progress: 100, error: undefined }
+              ? { ...item, id: key, status: "done", progress: 100, error: undefined }
               : item,
           ),
         );
@@ -262,9 +270,19 @@ export function ImageUploader({
   };
 
   const removeImage = (localId: string) => {
+    const target = images.find((item) => item.localId === localId);
+    if (
+      target &&
+      target.status === "done" &&
+      target.id &&
+      target.file &&
+      !target.localId.startsWith("existing-")
+    ) {
+      void deleteUploadedImage(target.id);
+    }
     onChange((prev) => {
-      const target = prev.find((item) => item.localId === localId);
-      if (target) URL.revokeObjectURL(target.previewUrl);
+      const removed = prev.find((item) => item.localId === localId);
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
       return prev.filter((item) => item.localId !== localId);
     });
   };
@@ -345,7 +363,7 @@ export function ImageUploader({
               {isDragging ? "Drop photos to upload" : "Add photos of the item"}
             </span>
             <span className="mt-1 text-xs text-[var(--color-muted-gray)]">
-              Drag &amp; drop or click to browse · up to {MAX} photos · JPG, PNG, WebP · max{" "}
+              Drag &amp; drop or click to browse · up to {MAX} photos · JPG, PNG, WebP, AVIF · max{" "}
               {Math.round(uploadLimits.maxBytes / (1024 * 1024))}MB each
             </span>
             <span className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-[var(--color-shop-violet)] px-4 py-2 text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 group-hover:opacity-90">
@@ -397,7 +415,7 @@ export function ImageUploader({
           ? `Maximum ${MAX} photos added. Remove one to swap in another.`
           : uploadEnabled
             ? "The first photo is used as the cover in the marketplace."
-            : "Photos are preview-only here — connect Cloudflare Images to publish them."}
+            : "Photos are preview-only here — connect Cloudflare R2 to publish them."}
       </p>
 
       {rejections.length > 0 && (

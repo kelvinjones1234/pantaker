@@ -4,6 +4,7 @@ import {
   useActionState,
   useEffect,
   useId,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -17,6 +18,10 @@ const inputClass =
   "h-[52px] w-full max-w-[352px] sm:w-[352px] rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-gray)] focus:border-[var(--color-muted-gray)]";
 
 const RESEND_SECONDS = 60;
+
+function emptyCode() {
+  return Array.from({ length: 6 }, () => "");
+}
 
 function FieldError({ id, messages }: { id: string; messages?: string[] }) {
   if (!messages?.length) return null;
@@ -53,6 +58,8 @@ export function AuthForm({
   const [cooldown, setCooldown] = useState(0);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [isVerifying, startVerify] = useTransition();
+  const [code, setCode] = useState<string[]>(emptyCode);
+  const codeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const codeId = useId();
 
   const [reqState, requestCode, isRequesting] = useActionState(
@@ -64,6 +71,8 @@ export function AuthForm({
     if (reqState.status === "code_sent") {
       setStep("code");
       setCooldown(RESEND_SECONDS);
+      setCode(emptyCode());
+      setVerifyError(null);
     }
   }, [reqState]);
 
@@ -81,13 +90,109 @@ export function AuthForm({
     setCooldown(RESEND_SECONDS);
   };
 
+  const focusCodeInput = (index: number) => {
+    const input = codeInputs.current[index];
+    if (!input) return;
+    input.focus();
+    input.select();
+  };
+
+  const applyDigits = (start: number, raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 6 - start);
+    if (!digits) return;
+
+    setCode((previous) => {
+      const next = [...previous];
+      digits.split("").forEach((digit, offset) => {
+        next[start + offset] = digit;
+      });
+      return next;
+    });
+    setVerifyError(null);
+    focusCodeInput(Math.min(start + digits.length, 5));
+  };
+
+  const handleCodeChange = (index: number, value: string) => {
+    const digits = value.replace(/\D/g, "");
+
+    if (!digits) {
+      setCode((previous) => {
+        const next = [...previous];
+        next[index] = "";
+        return next;
+      });
+      return;
+    }
+
+    if (digits.length > 1) {
+      applyDigits(index, digits);
+      return;
+    }
+
+    setCode((previous) => {
+      const next = [...previous];
+      next[index] = digits;
+      return next;
+    });
+    setVerifyError(null);
+    if (index < 5) focusCodeInput(index + 1);
+  };
+
+  const handleCodeKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Backspace") {
+      if (!code[index] && index > 0) {
+        event.preventDefault();
+        setCode((previous) => {
+          const next = [...previous];
+          next[index - 1] = "";
+          return next;
+        });
+        setVerifyError(null);
+        focusCodeInput(index - 1);
+      }
+      return;
+    }
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      focusCodeInput(index - 1);
+      return;
+    }
+
+    if (event.key === "ArrowRight" && index < 5) {
+      event.preventDefault();
+      focusCodeInput(index + 1);
+      return;
+    }
+
+    if (event.key === "Delete") {
+      event.preventDefault();
+      setCode((previous) => {
+        const next = [...previous];
+        next[index] = "";
+        return next;
+      });
+      setVerifyError(null);
+    }
+  };
+
+  const handleCodePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const digits = event.clipboardData.getData("text").replace(/\D/g, "");
+    if (!digits) return;
+    event.preventDefault();
+    applyDigits(0, digits);
+  };
+
   const verifyCode = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const token = String(
-      new FormData(event.currentTarget).get("token") ?? "",
-    ).trim();
+    const token = code.join("");
     if (!/^\d{6}$/.test(token)) {
       setVerifyError("Enter the 6-digit code we emailed you.");
+      const firstEmpty = code.findIndex((digit) => !digit);
+      focusCodeInput(firstEmpty === -1 ? 0 : firstEmpty);
       return;
     }
 
@@ -134,35 +239,44 @@ export function AuthForm({
           <input type="hidden" name="next" value={next} />
           <input type="hidden" name="email" value={email} />
 
-          <div>
-            <label htmlFor={codeId} className="sr-only">
-              6-digit code
-            </label>
-            <input
-              id={codeId}
-              name="token"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="\d{6}"
-              maxLength={6}
-              required
-              autoFocus
-              placeholder="6-digit code"
-              aria-invalid={Boolean(verifyError)}
-              aria-describedby={verifyError ? `${codeId}-error` : undefined}
-              className={`${inputClass} text-center text-lg tracking-[0.4em] tabular`}
-            />
+          <fieldset aria-describedby={verifyError ? `${codeId}-error` : undefined}>
+            <legend className="sr-only">6-digit verification code</legend>
+            <div className="grid grid-cols-6 gap-2">
+              {code.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(node) => {
+                    codeInputs.current[index] = node;
+                  }}
+                  value={digit}
+                  onChange={(event) =>
+                    handleCodeChange(index, event.target.value)
+                  }
+                  onKeyDown={(event) => handleCodeKeyDown(index, event)}
+                  onPaste={handleCodePaste}
+                  onFocus={(event) => event.currentTarget.select()}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete={index === 0 ? "one-time-code" : "off"}
+                  maxLength={1}
+                  required
+                  autoFocus={index === 0}
+                  aria-label={`Digit ${index + 1} of 6`}
+                  aria-invalid={Boolean(verifyError)}
+                  className="h-[52px] w-full rounded-[16px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-center text-lg font-semibold text-[var(--color-ink-black)] tabular outline-none transition-colors duration-200 focus:border-[var(--color-muted-gray)] aria-[invalid=true]:border-[var(--color-error)]"
+                />
+              ))}
+            </div>
             {verifyError && (
               <p
                 id={`${codeId}-error`}
                 role="alert"
-                className="mt-1.5 text-xs text-[var(--color-error)]"
+                className="mt-2 text-xs text-[var(--color-error)]"
               >
                 {verifyError}
               </p>
             )}
-          </div>
+          </fieldset>
 
           <button
             type="submit"
@@ -179,6 +293,7 @@ export function AuthForm({
             onClick={() => {
               setStep("email");
               setVerifyError(null);
+              setCode(emptyCode());
             }}
             className="cursor-pointer font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:text-[var(--color-ink-black)]"
           >

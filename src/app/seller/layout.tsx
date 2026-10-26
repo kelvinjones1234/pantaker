@@ -6,7 +6,8 @@ import { getUnreadNotificationCount } from "@/features/notifications/queries";
 import { Logo } from "@/components/brand/Logo";
 import { SellerSidebar } from "@/components/seller/SellerSidebar";
 import { SellerMobileNav } from "@/components/seller/SellerMobileNav";
-import { BellIcon, PlusIcon } from "@/components/brand/icons";
+import { BellIcon, PlusIcon, ShieldIcon } from "@/components/brand/icons";
+import { isAdminUser } from "@/features/admin/roles";
 
 /**
  * Server-side gate for the private seller area: authentication is enforced
@@ -14,19 +15,26 @@ import { BellIcon, PlusIcon } from "@/components/brand/icons";
  * bottom dock; guests are redirected to sign-in (local preview renders without a
  * session).
  */
-export default async function SellerLayout({ children }: { children: React.ReactNode }) {
+export default async function SellerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const user = await requireSeller("/seller");
-  const [{ status: accountStatus }, unreadMessages, unreadNotifications] = await Promise.all([
-    getAccountAccessState(),
-    getUnreadMessageCount("seller"),
-    getUnreadNotificationCount(),
-  ]);
+  const isAdmin = isAdminUser(user);
+  const [{ status: accountStatus }, unreadMessages, unreadNotifications] =
+    await Promise.all([
+      getAccountAccessState(),
+      getUnreadMessageCount("seller"),
+      getUnreadNotificationCount(),
+    ]);
 
   return (
     <div className="min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]">
       <div className="mx-auto flex w-full max-w-[1200px]">
         <SellerSidebar
           email={user?.email}
+          isAdmin={isAdmin}
           unreadMessages={unreadMessages}
           unreadNotifications={unreadNotifications}
         />
@@ -37,6 +45,15 @@ export default async function SellerLayout({ children }: { children: React.React
               <Logo compact />
             </Link>
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  aria-label="Open admin"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+                >
+                  <ShieldIcon className="h-4 w-4" />
+                </Link>
+              )}
               <Link
                 href="/notifications"
                 aria-label={
@@ -69,9 +86,9 @@ export default async function SellerLayout({ children }: { children: React.React
                 role="status"
                 className="mb-5 rounded-[20px] bg-[var(--color-warning-bg)] px-4 py-3 text-[12px] leading-relaxed text-[var(--color-warning)]"
               >
-                Your account is restricted. You can browse and read messages, but listing,
-                messaging, and sales actions stay unavailable until a Pantaker admin lifts the
-                restriction.
+                Your account is restricted. You can browse and read messages,
+                but listing, messaging, and sales actions stay unavailable until
+                a Pantaker admin lifts the restriction.
               </div>
             )}
             {children}

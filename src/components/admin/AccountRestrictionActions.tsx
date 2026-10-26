@@ -17,6 +17,18 @@ function formData(entries: Record<string, string>): FormData {
   return data;
 }
 
+const ACTION_ORDER: Record<AccountDisplayStatus, AccountDisplayStatus[]> = {
+  active: ["restricted", "suspended"],
+  restricted: ["suspended", "active"],
+  suspended: ["active"],
+};
+
+const ACTION_LABELS: Record<AccountDisplayStatus, string> = {
+  active: "Restore access",
+  restricted: "Restrict account",
+  suspended: "Suspend account",
+};
+
 const DIALOG_COPY: Record<
   AccountDisplayStatus,
   { title: string; confirm: string; tone: "default" | "danger"; description: string }
@@ -59,29 +71,12 @@ export function AccountRestrictionActions({
 
   const label = email ?? userId;
 
-  const items: AdminActionMenuItem[] = [];
-  if (status === "active") {
-    items.push(
-      { key: "restrict", label: "Restrict account", onSelect: () => open("restricted") },
-      {
-        key: "suspend",
-        label: "Suspend account",
-        tone: "danger",
-        onSelect: () => open("suspended"),
-      },
-    );
-  } else {
-    items.push(
-      { key: "restrict", label: "Restrict account", onSelect: () => open("restricted") },
-      {
-        key: "suspend",
-        label: "Suspend account",
-        tone: "danger",
-        onSelect: () => open("suspended"),
-      },
-      { key: "restore", label: "Restore access", onSelect: () => open("active") },
-    );
-  }
+  const items: AdminActionMenuItem[] = ACTION_ORDER[status].map((next) => ({
+    key: next,
+    label: ACTION_LABELS[next],
+    tone: next === "suspended" ? "danger" : "default",
+    onSelect: () => open(next),
+  }));
 
   function open(next: AccountDisplayStatus) {
     setError(null);

@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
-import { LogoutIcon, PlusIcon } from "@/components/brand/icons";
+import {
+  ChatIcon,
+  LogoutIcon,
+  PlusIcon,
+  ShieldIcon,
+} from "@/components/brand/icons";
 import { cn } from "@/lib/utils";
 import { SELLER_NAV, isSellerNavActive } from "@/components/seller/seller-nav";
 
@@ -13,10 +18,12 @@ import { SELLER_NAV, isSellerNavActive } from "@/components/seller/seller-nav";
  */
 export function SellerSidebar({
   email,
+  isAdmin = false,
   unreadMessages = 0,
   unreadNotifications = 0,
 }: {
   email?: string | null;
+  isAdmin?: boolean;
   unreadMessages?: number;
   unreadNotifications?: number;
 }) {
@@ -74,13 +81,40 @@ export function SellerSidebar({
         List an item
       </Link>
 
+      <nav aria-label="Other areas" className="flex flex-col gap-1">
+        <Link
+          href="/messages"
+          className="flex items-center gap-3 rounded-[20px] px-3 py-2.5 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+        >
+          <ChatIcon className="h-5 w-5" />
+          Buying messages
+        </Link>
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 rounded-[20px] px-3 py-2.5 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+          >
+            <ShieldIcon className="h-5 w-5" />
+            Admin
+          </Link>
+        )}
+      </nav>
+
       <div className="mt-auto rounded-[20px] bg-[var(--color-canvas-mist)] p-3">
         {email ? (
-          <p className="truncate text-[12px] text-[var(--color-ash-veil)]" title={email}>
-            Signed in as <span className="font-semibold text-[var(--color-ink-black)]">{email}</span>
+          <p
+            className="truncate text-[12px] text-[var(--color-ash-veil)]"
+            title={email}
+          >
+            Signed in as{" "}
+            <span className="font-semibold text-[var(--color-ink-black)]">
+              {email}
+            </span>
           </p>
         ) : (
-          <p className="text-[12px] text-[var(--color-ash-veil)]">Preview mode — not signed in.</p>
+          <p className="text-[12px] text-[var(--color-ash-veil)]">
+            Preview mode — not signed in.
+          </p>
         )}
         <form action="/auth/signout" method="post" className="mt-2">
           <button

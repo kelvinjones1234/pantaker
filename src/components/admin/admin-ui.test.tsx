@@ -22,13 +22,15 @@ vi.mock("next/link", () => ({
 }));
 
 describe("AdminPagination", () => {
-  const render = (overrides: Partial<Parameters<typeof AdminPagination>[0]> = {}) =>
+  const render = (
+    overrides: Partial<Parameters<typeof AdminPagination>[0]> = {},
+  ) =>
     renderToStaticMarkup(
       <AdminPagination
         page={1}
         pageSize={20}
         totalItems={45}
-        hrefForPage={(page) => `/admin/users?page=${page}`}
+        hrefForPage={(page) => `/admin/accounts?page=${page}`}
         {...overrides}
       />,
     );
@@ -36,7 +38,7 @@ describe("AdminPagination", () => {
   it("marks the current page and links to neighbors", () => {
     const html = render();
     expect(html).toContain('aria-current="page"');
-    expect(html).toContain('href="/admin/users?page=2"');
+    expect(html).toContain('href="/admin/accounts?page=2"');
     expect(html).toContain("Showing");
   });
 
@@ -56,7 +58,12 @@ describe("AdminDataTable", () => {
   }
   const columns = [
     { key: "name", header: "Name", render: (row: Row) => row.name },
-    { key: "id", header: "ID", render: (row: Row) => row.id, align: "end" as const },
+    {
+      key: "id",
+      header: "ID",
+      render: (row: Row) => row.id,
+      align: "end" as const,
+    },
   ];
 
   it("renders a caption, column headers, and each row in both layouts", () => {
@@ -89,7 +96,12 @@ describe("AdminDataTable", () => {
     ).toBe("<p>No users yet</p>");
     expect(
       renderToStaticMarkup(
-        <AdminDataTable caption="Users" columns={columns} rows={[]} getRowKey={(row) => row.id} />,
+        <AdminDataTable
+          caption="Users"
+          columns={columns}
+          rows={[]}
+          getRowKey={(row) => row.id}
+        />,
       ),
     ).toBe("");
   });
@@ -98,7 +110,10 @@ describe("AdminDataTable", () => {
 describe("AdminActionMenu", () => {
   it("renders a collapsed, labelled trigger", () => {
     const html = renderToStaticMarkup(
-      <AdminActionMenu label="User actions" items={[{ key: "view", label: "View", href: "/x" }]} />,
+      <AdminActionMenu
+        label="User actions"
+        items={[{ key: "view", label: "View", href: "/x" }]}
+      />,
     );
     expect(html).toContain('aria-haspopup="menu"');
     expect(html).toContain('aria-expanded="false"');
@@ -143,10 +158,14 @@ describe("ConfirmDialog", () => {
 
 describe("StatusPill", () => {
   it("keeps the neutral pill white and exposes a tone class", () => {
-    expect(renderToStaticMarkup(<StatusPill>Active</StatusPill>)).toContain("badge-condition");
-    expect(renderToStaticMarkup(<StatusPill tone="danger">Needs changes</StatusPill>)).toContain(
-      "var(--color-error)",
+    expect(renderToStaticMarkup(<StatusPill>Active</StatusPill>)).toContain(
+      "badge-condition",
     );
+    expect(
+      renderToStaticMarkup(
+        <StatusPill tone="danger">Needs changes</StatusPill>,
+      ),
+    ).toContain("var(--color-error)");
   });
 });
 
@@ -171,7 +190,9 @@ describe("Field and FieldError", () => {
 
 describe("Timestamp", () => {
   it("uses a semantic time element and falls back to an em dash", () => {
-    const html = renderToStaticMarkup(<Timestamp value="2026-01-05T10:00:00Z" />);
+    const html = renderToStaticMarkup(
+      <Timestamp value="2026-01-05T10:00:00Z" />,
+    );
     expect(html).toContain("<time");
     expect(html).toContain('dateTime="2026-01-05T10:00:00Z"');
     expect(renderToStaticMarkup(<Timestamp value={null} />)).toContain("—");

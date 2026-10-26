@@ -1,5 +1,6 @@
-import { deliveryUrl, isCloudflareImagesConfigured } from "@/lib/cloudflare-images";
+import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { cn } from "@/lib/utils";
+import { StorageImage } from "@/components/ui/storage-image";
 
 export function initials(name: string | null | undefined): string {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -9,7 +10,7 @@ export function initials(name: string | null | undefined): string {
 }
 
 function avatarUrl(path: string | null | undefined): string | undefined {
-  if (!path || !isCloudflareImagesConfigured()) return undefined;
+  if (!path || !isImageStorageConfigured()) return undefined;
   try {
     return deliveryUrl(path);
   } catch {
@@ -18,7 +19,7 @@ function avatarUrl(path: string | null | undefined): string | undefined {
 }
 
 /**
- * Neutral participant avatar. Uses the Cloudflare image when available, and
+ * Neutral participant avatar. Uses the R2 image when available, and
  * otherwise falls back to initials on the mist canvas — never a stock photo.
  */
 export function ParticipantAvatar({
@@ -36,17 +37,19 @@ export function ParticipantAvatar({
   return (
     <span
       className={cn(
-        "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-canvas-mist)] text-[12px] font-semibold text-[var(--color-ash-veil)]",
+        "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-canvas-mist)] text-[12px] font-semibold text-[var(--color-ash-veil)]",
         className,
       )}
       aria-hidden="true"
     >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" className="h-full w-full object-cover" />
-      ) : (
-        initials(label)
-      )}
+      <StorageImage
+        src={src}
+        alt=""
+        fill
+        sizes="40px"
+        className="object-cover"
+        fallback={initials(label)}
+      />
     </span>
   );
 }

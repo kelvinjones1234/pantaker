@@ -1,8 +1,5 @@
 import { requireSeller } from "@/features/auth/authorization";
-import {
-  deliveryUrl,
-  isCloudflareImagesConfigured,
-} from "@/lib/cloudflare-images";
+import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { paginationDefaults } from "@/config/site";
 import type { Listing, ItemStatus } from "@/types/marketplace";
 import type { SellerListingFilters } from "@/lib/validation/listings";
@@ -82,7 +79,7 @@ function toListing(row: SellerListingRow): Listing {
 /** Public delivery URL for a listing's cover image (lowest sort_order), if any. */
 export function listingCoverUrl(rows: unknown): string | undefined {
   if (
-    !isCloudflareImagesConfigured() ||
+    !isImageStorageConfigured() ||
     !Array.isArray(rows) ||
     rows.length === 0
   )

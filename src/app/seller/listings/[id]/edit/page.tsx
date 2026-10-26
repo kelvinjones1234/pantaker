@@ -4,7 +4,7 @@ import { requireSeller } from "@/features/auth/authorization";
 import { getCategories } from "@/features/listings/queries";
 import { getSellerListing } from "@/features/listings/seller-queries";
 import { canEdit } from "@/features/listings/lifecycle";
-import { deliveryUrl, isCloudflareImagesConfigured } from "@/lib/cloudflare-images";
+import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { SellerPageHeader } from "@/components/seller/SellerPageHeader";
 import { ListingForm } from "@/components/seller/ListingForm";
 
@@ -32,7 +32,7 @@ export default async function EditListingPage({
     .slice()
     .sort((a, b) => a.sort_order - b.sort_order)
     .flatMap((image) => {
-      if (!isCloudflareImagesConfigured() || !image.storage_path) return [];
+      if (!isImageStorageConfigured() || !image.storage_path) return [];
       try {
         return [{ id: image.storage_path, url: deliveryUrl(image.storage_path), name: image.alt_text ?? listing.title }];
       } catch {
@@ -51,7 +51,7 @@ export default async function EditListingPage({
         listingId={listing.id}
         categories={categories}
         isLive
-        imageUploadsConfigured={isCloudflareImagesConfigured()}
+        imageUploadsConfigured={isImageStorageConfigured()}
         initial={{
           title: listing.title,
           description: listing.description,

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/features/admin/authorization";
 import { Logo } from "@/components/brand/Logo";
 import { LogoutIcon, ShieldIcon } from "@/components/brand/icons";
+import { AdminNav } from "@/components/admin/AdminNav";
+import { getAdminRole, permissionsForRole } from "@/features/admin/roles";
 
 /**
  * Server-side gate for the whole admin area: authentication and the admin role
@@ -22,6 +24,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const admin = await requireAdmin("/admin");
+  const permissions = permissionsForRole(getAdminRole(admin));
 
   return (
     <div className="min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]">
@@ -40,6 +43,12 @@ export default async function AdminLayout({
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/seller"
+              className="hidden rounded-full px-3 py-2 text-xs font-semibold text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)] sm:inline-flex"
+            >
+              Seller Centre
+            </Link>
             {admin.email && (
               <span
                 className="hidden max-w-[240px] truncate text-[12px] text-[var(--color-ash-veil)] sm:block"
@@ -59,6 +68,8 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
+
+      <AdminNav permissions={permissions} />
 
       <main className="mx-auto w-full max-w-[1200px] px-4 pb-16 pt-6 sm:px-6 lg:pt-8">
         {children}

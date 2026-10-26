@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPinIcon } from "@/components/brand/icons";
@@ -11,6 +10,7 @@ import { pricingLabel, timeAgo } from "@/lib/utils";
 import { StartConversationForm } from "@/components/messaging/StartConversationForm";
 import { ReportListingForm } from "@/components/messaging/ReportListingForm";
 import { ParticipantAvatar } from "@/components/messaging/ParticipantAvatar";
+import { StorageImage } from "@/components/ui/storage-image";
 
 export const metadata: Metadata = { title: "Listing — Pantaker" };
 
@@ -54,20 +54,19 @@ export default async function ListingDetailPage({
         <div className="flex flex-col gap-5">
           <div className="shop-card overflow-hidden p-2.5">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-[var(--color-canvas-mist)]">
-              {listing.images[0] ? (
-                <Image
-                  src={listing.images[0]}
-                  alt={listing.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 640px"
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <span className="flex h-full items-center justify-center text-[13px] text-[var(--color-muted-gray)]">
-                  No photo provided
-                </span>
-              )}
+              <StorageImage
+                src={listing.images[0]}
+                alt={listing.title}
+                fill
+                sizes="(max-width: 1024px) 100vw, 640px"
+                className="object-cover"
+                priority
+                fallback={
+                  <span className="flex h-full items-center justify-center text-[13px] text-[var(--color-muted-gray)]">
+                    No photo provided
+                  </span>
+                }
+              />
             </div>
           </div>
 

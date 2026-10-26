@@ -332,6 +332,7 @@ export function ListingForm({
           onChange={setImages}
           disabled={isPending}
           uploadEnabled={imageUploadsConfigured}
+          listingId={listingId}
         />
         <FieldError messages={fieldErrors.image_ids} />
       </Section>

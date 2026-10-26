@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { requireSeller } from "@/features/auth/authorization";
 import {
@@ -12,6 +11,7 @@ import { SellerPageHeader } from "@/components/seller/SellerPageHeader";
 import { SellerMetricCard } from "@/components/seller/SellerMetricCard";
 import { SellerEmptyState } from "@/components/seller/SellerEmptyState";
 import { SellerStatusPill } from "@/components/seller/SellerStatusPill";
+import { StorageImage } from "@/components/ui/storage-image";
 import { AlertIcon, ArrowRightIcon, PackageIcon, PlusIcon } from "@/components/brand/icons";
 import { pricingLabel, timeAgo } from "@/lib/utils";
 import type { Listing } from "@/types/marketplace";
@@ -29,13 +29,18 @@ function RecentListing({ listing }: { listing: Listing }) {
   return (
     <Link href="/seller/listings" className={listItemClass}>
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[14px] bg-[var(--color-pure-white)]">
-        {cover ? (
-          <Image src={cover} alt="" fill sizes="56px" className="object-cover" />
-        ) : (
-          <span className="flex h-full items-center justify-center text-[10px] text-[var(--color-muted-gray)]">
-            No photo
-          </span>
-        )}
+        <StorageImage
+          src={cover}
+          alt=""
+          fill
+          sizes="56px"
+          className="object-cover"
+          fallback={
+            <span className="flex h-full items-center justify-center text-[10px] text-[var(--color-muted-gray)]">
+              No photo
+            </span>
+          }
+        />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">

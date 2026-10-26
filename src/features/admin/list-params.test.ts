@@ -62,27 +62,36 @@ describe("parseDate", () => {
 describe("buildQueryString", () => {
   it("drops empty, null, undefined, and page 1", () => {
     expect(
-      buildQueryString({ q: "ada", status: "", role: null, page: 1, category: undefined }),
+      buildQueryString({
+        q: "ada",
+        status: "",
+        role: null,
+        page: 1,
+        category: undefined,
+      }),
     ).toBe("q=ada");
   });
 
   it("keeps real filters and encodes values", () => {
-    expect(buildQueryString({ q: "ada & co", status: "suspended", page: 3 })).toBe(
-      "q=ada+%26+co&status=suspended&page=3",
-    );
+    expect(
+      buildQueryString({ q: "ada & co", status: "suspended", page: 3 }),
+    ).toBe("q=ada+%26+co&status=suspended&page=3");
   });
 });
 
 describe("withQuery", () => {
   it("omits the question mark when there is no query", () => {
-    expect(withQuery("/admin/users", "")).toBe("/admin/users");
-    expect(withQuery("/admin/users", "q=a")).toBe("/admin/users?q=a");
+    expect(withQuery("/admin/accounts", "")).toBe("/admin/accounts");
+    expect(withQuery("/admin/accounts", "q=a")).toBe("/admin/accounts?q=a");
   });
 });
 
 describe("parseAdminListParams", () => {
   it("combines the shared list values safely", () => {
-    expect(parseAdminListParams({ q: ["ada"], page: "2" })).toEqual({ q: "ada", page: 2 });
+    expect(parseAdminListParams({ q: ["ada"], page: "2" })).toEqual({
+      q: "ada",
+      page: 2,
+    });
     expect(parseAdminListParams({})).toEqual({ q: "", page: 1 });
     expect(parseAdminListParams({ q: "x".repeat(120), page: "-1" })).toEqual({
       q: "x".repeat(80),

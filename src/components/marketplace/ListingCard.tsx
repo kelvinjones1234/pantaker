@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { StorageImage } from "@/components/ui/storage-image";
 import Link from "next/link";
 import { MapPinIcon } from "@/components/brand/icons";
 import { ConditionBadge } from "@/components/ui/badge";
@@ -50,20 +50,19 @@ export function ListingCard({
         className="shop-card group flex cursor-pointer items-stretch gap-3 p-2.5 transition-all hover:-translate-y-0.5"
       >
         <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-[20px] bg-[var(--color-canvas-mist)] sm:w-36">
-          {listing.image ? (
-            <Image
-              src={listing.image}
-              alt={listing.title}
-              fill
-              sizes="(max-width: 640px) 112px, 144px"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <span className="flex h-full items-center justify-center p-2 text-center text-[11px] text-[var(--color-muted-gray)]">
-              No photo
-            </span>
-          )}
+          <StorageImage
+            src={listing.image}
+            alt={listing.title}
+            fill
+            sizes="(max-width: 640px) 112px, 144px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            fallback={
+              <span className="flex h-full items-center justify-center p-2 text-center text-[11px] text-[var(--color-muted-gray)]">
+                No photo
+              </span>
+            }
+          />
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center py-1 pr-1.5">
           <p className="truncate text-xs font-medium text-[var(--color-muted-gray)]">
@@ -90,20 +89,19 @@ export function ListingCard({
       className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5"
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-[var(--color-canvas-mist)]">
-        {listing.image ? (
-          <Image
-            src={listing.image}
-            alt={listing.title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">
-            No photo provided
-          </div>
-        )}
+        <StorageImage
+          src={listing.image}
+          alt={listing.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+          fallback={
+            <div className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">
+              No photo provided
+            </div>
+          }
+        />
         <div className="absolute left-2 top-2">
           <ConditionBadge value={listing.condition} className="bg-[var(--overlay-paper-95)]" />
         </div>

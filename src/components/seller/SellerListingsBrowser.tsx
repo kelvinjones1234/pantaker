@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Image from "next/image";
+import { StorageImage } from "@/components/ui/storage-image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pagination } from "@/components/marketplace/Pagination";
 import { SellerEmptyState } from "@/components/seller/SellerEmptyState";
 import { SellerStatusPill } from "@/components/seller/SellerStatusPill";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CaretDownIcon, MoreIcon, PackageIcon, PlusIcon, SearchIcon } from "@/components/brand/icons";
 import { deleteListingAction, updateListingStatusAction } from "@/features/listings/actions";
 import { canDelete, canEdit, transitionsFrom } from "@/features/listings/lifecycle";
@@ -55,6 +56,39 @@ function SelectShell({ children }: { children: React.ReactNode }) {
     <div className="relative">
       {children}
       <CaretDownIcon className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-gray)]" />
+    </div>
+  );
+}
+
+function SellerListingRowsSkeleton() {
+  return (
+    <div
+      className="flex flex-col gap-2.5"
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <span className="sr-only">Loading your listings</span>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="shop-card p-3 sm:p-4">
+          <div className="flex items-start gap-3 sm:items-center">
+            <Skeleton className="h-16 w-16 shrink-0 rounded-[16px] sm:h-20 sm:w-20" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="mt-2 h-4 w-3/5 rounded-[8px]" />
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="hidden h-3 w-28 sm:block" />
+              </div>
+            </div>
+            <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -235,7 +269,9 @@ export function SellerListingsBrowser({
         </div>
       </div>
 
-      {items.length === 0 ? (
+      {isPending ? (
+        <SellerListingRowsSkeleton />
+      ) : items.length === 0 ? (
         <SellerEmptyState
           heading="No listings match"
           copy="Nothing matches the current search or filters. Try a different term, or clear the filters to see everything."
@@ -263,13 +299,18 @@ export function SellerListingsBrowser({
               <li key={listing.id} className="shop-card p-3 sm:p-4">
                 <div className="flex items-start gap-3 sm:items-center">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[16px] bg-[var(--color-canvas-mist)] sm:h-20 sm:w-20">
-                    {listing.image ? (
-                      <Image src={listing.image} alt="" fill sizes="80px" className="object-cover" />
-                    ) : (
-                      <span className="flex h-full items-center justify-center text-[10px] text-[var(--color-muted-gray)]">
-                        No photo
-                      </span>
-                    )}
+                    <StorageImage
+                      src={listing.image}
+                      alt=""
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                      fallback={
+                        <span className="flex h-full items-center justify-center text-[10px] text-[var(--color-muted-gray)]">
+                          No photo
+                        </span>
+                      }
+                    />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -358,7 +399,7 @@ export function SellerListingsBrowser({
         </ul>
       )}
 
-      {total > 0 && (
+      {total > 0 && !isPending && (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <p className="text-[12px] text-[var(--color-ash-veil)]">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total} listings

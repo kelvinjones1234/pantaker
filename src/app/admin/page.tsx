@@ -85,6 +85,12 @@ export default async function AdminPage() {
   const admin = await requireAdmin("/admin");
   const role = getAdminRole(admin);
   const permissions = permissionsForRole(role);
+  const availableTools = AVAILABLE_TOOLS.filter((tool) =>
+    permissions.includes(tool.permission),
+  );
+  const plannedTools = PLANNED_TOOLS.filter((tool) =>
+    permissions.includes(tool.permission),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -122,7 +128,7 @@ export default async function AdminPage() {
           description="Each tool is built behind a permission gate. Tools marked available read and write real records."
         >
           <ul className="flex flex-col gap-4">
-            {AVAILABLE_TOOLS.map((tool) => (
+            {availableTools.map((tool) => (
               <li key={tool.label} className="min-w-0">
                 <Link
                   href={tool.href}
@@ -139,7 +145,7 @@ export default async function AdminPage() {
                 </p>
               </li>
             ))}
-            {PLANNED_TOOLS.map((tool) => (
+            {plannedTools.map((tool) => (
               <li key={tool.label} className="min-w-0">
                 <p className="text-[13px] font-semibold text-[var(--color-ink-black)]">
                   {tool.label}

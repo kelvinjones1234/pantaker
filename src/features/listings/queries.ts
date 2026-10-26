@@ -6,18 +6,15 @@ import {
 import type { MarketplaceFilters } from "@/lib/validation/listings";
 import type { CardListing } from "@/components/marketplace/ListingCard";
 import { paginationDefaults } from "@/config/site";
-import {
-  deliveryUrl,
-  isCloudflareImagesConfigured,
-} from "@/lib/cloudflare-images";
+import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { getPrisma, isPrismaConfigured } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import type { Prisma } from "@/generated/prisma/client";
 
-/** Cover image URL for a listing, from its lowest sort_order image id. */
+/** Cover image URL for a listing, from its lowest sort_order object key. */
 function coverImageUrl(rows: unknown): string | undefined {
   if (
-    !isCloudflareImagesConfigured() ||
+    !isImageStorageConfigured() ||
     !Array.isArray(rows) ||
     rows.length === 0
   ) {
@@ -301,7 +298,7 @@ export async function getListingDetail(
   if (!row) return null;
 
   const images = row.images.flatMap((image) => {
-    if (!isCloudflareImagesConfigured() || !image.storage_path) return [];
+    if (!isImageStorageConfigured() || !image.storage_path) return [];
     try {
       return [deliveryUrl(image.storage_path)];
     } catch {

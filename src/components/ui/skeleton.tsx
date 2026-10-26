@@ -10,6 +10,29 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
+/** Announces a page-shaped skeleton once while keeping the shapes decorative. */
+export function LoadingRegion({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      className={className}
+    >
+      <span className="sr-only">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 /**
  * Table-shaped loading placeholder. Announces busy state once, then renders the
  * row/column skeleton; on small screens it falls back to stacked card blocks,

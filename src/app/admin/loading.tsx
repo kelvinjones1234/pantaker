@@ -1,5 +1,5 @@
-import { SkeletonTable } from "@/components/ui/skeleton";
+import { AdminDashboardSkeleton } from "@/components/ui/page-skeletons";
 
 export default function AdminLoading() {
-  return <SkeletonTable rows={6} columns={4} label="Loading admin data" />;
+  return <AdminDashboardSkeleton />;
 }

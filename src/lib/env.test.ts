@@ -10,6 +10,12 @@ const KEYS = [
   "EMAIL_SERVER_USER",
   "EMAIL_SERVER_PASSWORD",
   "EMAIL_FROM",
+  "PANTAKER_IMAGE_MODE",
+  "CLOUDFLARE_R2_BUCKET",
+  "CLOUDFLARE_R2_ACCESS_KEY",
+  "CLOUDFLARE_R2_SECRET_KEY",
+  "CLOUDFLARE_R2_BUCKET_ENDPOINT",
+  "NEXT_PUBLIC_R2_PUBLIC_DOMAIN",
 ] as const;
 
 function setProductionEnv(siteUrl = "https://pantaker.example") {
@@ -22,6 +28,15 @@ function setProductionEnv(siteUrl = "https://pantaker.example") {
   vi.stubEnv("EMAIL_FROM", "Pantaker <hello@pantaker.example>");
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", siteUrl);
   vi.stubEnv("NEXT_PUBLIC_SUPPORT_EMAIL", "support@pantaker.example");
+  vi.stubEnv("PANTAKER_IMAGE_MODE", "r2");
+  vi.stubEnv("CLOUDFLARE_R2_BUCKET", "pantaker-test");
+  vi.stubEnv("CLOUDFLARE_R2_ACCESS_KEY", "test-access-key");
+  vi.stubEnv("CLOUDFLARE_R2_SECRET_KEY", "test-secret-key");
+  vi.stubEnv(
+    "CLOUDFLARE_R2_BUCKET_ENDPOINT",
+    "https://test-account.r2.cloudflarestorage.com",
+  );
+  vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_DOMAIN", "https://images.example.com");
 }
 
 afterEach(() => {
@@ -43,6 +58,26 @@ describe("productionConfigError", () => {
   it("blocks a localhost canonical URL in production", () => {
     setProductionEnv("http://localhost:3000");
     expect(productionConfigError()).toMatch(/NEXT_PUBLIC_SITE_URL/);
+  });
+
+  it("blocks local image mode in production", () => {
+    setProductionEnv();
+    vi.stubEnv("PANTAKER_IMAGE_MODE", "local");
+    expect(productionConfigError()).toMatch(/PANTAKER_IMAGE_MODE=local/);
+  });
+
+  it("blocks production when R2 is not configured", () => {
+    setProductionEnv();
+    vi.stubEnv("CLOUDFLARE_R2_BUCKET", "");
+    vi.stubEnv("CLOUDFLARE_R2_ACCESS_KEY", "");
+    vi.stubEnv("CLOUDFLARE_R2_SECRET_KEY", "");
+    vi.stubEnv("CLOUDFLARE_R2_BUCKET_ENDPOINT", "");
+    vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_DOMAIN", "");
+    expect(productionConfigError()).toMatch(/CLOUDFLARE_R2_BUCKET/);
+    expect(productionConfigError()).toMatch(/CLOUDFLARE_R2_ACCESS_KEY/);
+    expect(productionConfigError()).toMatch(/CLOUDFLARE_R2_SECRET_KEY/);
+    expect(productionConfigError()).toMatch(/CLOUDFLARE_R2_BUCKET_ENDPOINT/);
+    expect(productionConfigError()).toMatch(/NEXT_PUBLIC_R2_PUBLIC_DOMAIN/);
   });
 
   it("accepts a fully configured production environment", () => {

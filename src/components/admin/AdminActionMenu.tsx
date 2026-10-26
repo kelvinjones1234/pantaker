@@ -1,10 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { MoreIcon } from "@/components/brand/icons";
 import { cn } from "@/lib/utils";
 import { nextMenuIndex, type MenuMove } from "@/components/admin/menu-nav";
+import { menuPosition, type MenuCoordinates } from "@/components/admin/menu-position";
 
 export interface AdminActionMenuItem {
   key: string;
@@ -34,10 +44,12 @@ export function AdminActionMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [coords, setCoords] = useState<MenuCoordinates | null>(null);
   const triggerId = useId();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
 
   const enabledIndexes = items
@@ -50,10 +62,48 @@ export function AdminActionMenu({
     if (focusTrigger) triggerRef.current?.focus();
   }, []);
 
+  const reposition = useCallback(() => {
+    const trigger = triggerRef.current;
+    const menu = menuRef.current;
+    if (!trigger || !menu) return;
+
+    setCoords(
+      menuPosition(
+        trigger.getBoundingClientRect(),
+        { width: menu.offsetWidth, height: menu.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight },
+        align,
+      ),
+    );
+  }, [align]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setCoords(null);
+      return;
+    }
+
+    reposition();
+
+    const handleViewportChange = () => reposition();
+    window.addEventListener("scroll", handleViewportChange, true);
+    window.addEventListener("resize", handleViewportChange);
+    return () => {
+      window.removeEventListener("scroll", handleViewportChange, true);
+      window.removeEventListener("resize", handleViewportChange);
+    };
+  }, [open, reposition]);
+
   useEffect(() => {
     if (!open) return;
     function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) close();
+      const target = event.target as Node;
+      if (
+        !rootRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
+        close();
+      }
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
@@ -148,67 +198,74 @@ export function AdminActionMenu({
         <MoreIcon className="h-5 w-5" />
       </button>
 
-      {open && (
-        <div
-          id={menuId}
-          role="menu"
-          aria-labelledby={triggerId}
-          onKeyDown={onMenuKeyDown}
-          className={cn(
-            "absolute top-full z-40 mt-2 min-w-[200px] rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-1.5",
-            align === "end" ? "right-0" : "left-0",
-          )}
-        >
-          {items.map((item, index) => {
-            const ref = (element: HTMLElement | null) => {
-              itemRefs.current[index] = element;
-            };
-            if (item.disabled) {
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            id={menuId}
+            role="menu"
+            aria-labelledby={triggerId}
+            onKeyDown={onMenuKeyDown}
+            style={{
+              position: "fixed",
+              top: coords?.top ?? 0,
+              left: coords?.left ?? 0,
+              visibility: coords ? "visible" : "hidden",
+            }}
+            className="z-40 max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-1.5"
+          >
+            {items.map((item, index) => {
+              const ref = (element: HTMLElement | null) => {
+                itemRefs.current[index] = element;
+              };
+              if (item.disabled) {
+                return (
+                  <span
+                    key={item.key}
+                    role="menuitem"
+                    aria-disabled="true"
+                    className={itemClass(item)}
+                  >
+                    {item.label}
+                  </span>
+                );
+              }
+              if (item.href) {
+                return (
+                  <Link
+                    key={item.key}
+                    ref={ref}
+                    role="menuitem"
+                    tabIndex={-1}
+                    href={item.href}
+                    onClick={() => close()}
+                    className={itemClass(item)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
               return (
-                <span
-                  key={item.key}
-                  role="menuitem"
-                  aria-disabled="true"
-                  className={itemClass(item)}
-                >
-                  {item.label}
-                </span>
-              );
-            }
-            if (item.href) {
-              return (
-                <Link
+                <button
                   key={item.key}
                   ref={ref}
+                  type="button"
                   role="menuitem"
                   tabIndex={-1}
-                  href={item.href}
-                  onClick={() => close()}
+                  onClick={() => {
+                    item.onSelect?.();
+                    close();
+                  }}
                   className={itemClass(item)}
                 >
                   {item.label}
-                </Link>
+                </button>
               );
-            }
-            return (
-              <button
-                key={item.key}
-                ref={ref}
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                onClick={() => {
-                  item.onSelect?.();
-                  close();
-                }}
-                className={itemClass(item)}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+            })}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

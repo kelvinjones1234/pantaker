@@ -48,13 +48,13 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     blurb: "Straight answers about how selling works.",
   },
   {
-    href: "/seller/settings/account-management",
-    label: "Account management",
+    href: "/seller/settings/security",
+    label: "Security",
     icon: KeyIcon,
-    blurb: "Sign out, recover access, or close your account.",
+    blurb: "Sessions, recovery, and closing your account.",
   },
 ];
 
 export function isSettingsGroupActive(pathname: string, href: string): boolean {
-  return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

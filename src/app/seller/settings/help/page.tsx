@@ -28,7 +28,7 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: "How do I close my account?",
-    a: "Account management has a permanent deletion flow that requires typing DELETE to confirm.",
+    a: "Security has a permanent deletion flow that requires typing DELETE to confirm.",
   },
 ];
 

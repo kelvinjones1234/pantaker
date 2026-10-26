@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireSeller } from "@/features/auth/authorization";
 import { getProfile } from "@/features/auth/queries";
 import { isPrismaConfigured } from "@/lib/prisma";
-import { deliveryUrl, isCloudflareImagesConfigured } from "@/lib/cloudflare-images";
+import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { SellerPageHeader } from "@/components/seller/SellerPageHeader";
 import { ProfileForm } from "@/components/seller/ProfileForm";
 
@@ -16,7 +16,7 @@ export default async function SellerProfilePage() {
   const profile = await getProfile();
 
   let avatarUrl: string | undefined;
-  if (profile?.avatar_path && isCloudflareImagesConfigured()) {
+  if (profile?.avatar_path && isImageStorageConfigured()) {
     try {
       avatarUrl = deliveryUrl(profile.avatar_path);
     } catch {
@@ -41,7 +41,7 @@ export default async function SellerProfilePage() {
           avatarId: profile?.avatar_path ?? undefined,
           avatarUrl,
         }}
-        imageUploadsConfigured={isCloudflareImagesConfigured()}
+        imageUploadsConfigured={isImageStorageConfigured()}
         isLive={Boolean(user) && isPrismaConfigured()}
       />
     </div>

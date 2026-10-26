@@ -225,7 +225,7 @@ export async function confirmEmailChangeAction(
 /** Sign out of every device for this account by invalidating its JWT version. */
 export async function signOutAllDevicesAction(): Promise<void> {
   const user = await requireUserForAction(
-    "/seller/settings/account-management",
+    "/seller/settings/security",
   );
   await getPrisma().user.update({
     where: { id: user.id },
@@ -242,7 +242,7 @@ export async function requestAccountDeletionAction(
   formData: FormData,
 ): Promise<SettingsActionResult> {
   const user = await requireUserForAction(
-    "/seller/settings/account-management",
+    "/seller/settings/security",
   );
 
   const parsed = deleteAccountSchema.safeParse({

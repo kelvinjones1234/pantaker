@@ -2,12 +2,16 @@
 
 import { useRef, useState } from "react";
 import { ImagePlusIcon, TrashIcon } from "@/components/brand/icons";
-import { requestDirectUpload, uploadToCloudflare, validateImageFile } from "@/lib/image-upload";
+import {
+  deleteUploadedImage,
+  uploadImageFile,
+  validateImageFile,
+} from "@/lib/image-upload";
+import { uploadLimits } from "@/config/site";
 
 /**
- * Single-image avatar upload using the existing Cloudflare direct-upload flow.
- * Stores only the returned image id (via a hidden field); the file never passes
- * through a server action.
+ * Single-image avatar upload through the authenticated server route.
+ * Stores only the returned object key (via a hidden field).
  */
 export function AvatarUploader({
   initialUrl,
@@ -50,9 +54,16 @@ export function AvatarUploader({
 
     void (async () => {
       try {
-        const ticket = await requestDirectUpload({ source: "profile-avatar" });
-        await uploadToCloudflare(ticket.uploadURL, file, setProgress);
-        applyId(ticket.id);
+        const previous = id;
+        const key = await uploadImageFile(
+          file,
+          { purpose: "profile" },
+          setProgress,
+        );
+        if (previous && previous !== initialId) {
+          void deleteUploadedImage(previous);
+        }
+        applyId(key);
         setStatus("idle");
       } catch (uploadError) {
         setError(uploadError instanceof Error ? uploadError.message : "Upload failed. Please try again.");
@@ -62,6 +73,9 @@ export function AvatarUploader({
   };
 
   const remove = () => {
+    if (id && id !== initialId) {
+      void deleteUploadedImage(id);
+    }
     applyId("");
     setPreview("");
     setStatus("idle");
@@ -107,8 +121,8 @@ export function AvatarUploader({
         </div>
         <p className="text-[12px] text-[var(--color-muted-gray)]">
           {enabled
-            ? "Square images look best. JPG, PNG, or WebP."
-            : "Photo upload needs Cloudflare Images to be configured."}
+            ? "Square images look best. JPG, PNG, WebP, or AVIF."
+            : "Photo upload needs Cloudflare R2 to be configured."}
         </p>
         {error && (
           <p role="alert" className="text-[12px] text-[var(--color-error)]">
@@ -120,7 +134,7 @@ export function AvatarUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={uploadLimits.allowedMimeTypes.join(",")}
         className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0];

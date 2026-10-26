@@ -1,61 +1,56 @@
 import { uploadLimits } from "@/config/site";
 
-/**
- * Client-side helpers for the Cloudflare Images direct-upload flow.
- *
- * The browser asks our API route for a one-time upload URL, then PUTs the file
- * straight to Cloudflare. The server action only ever receives the resulting
- * image id — the file never passes through our server action body.
- */
+export type UploadPurpose = "listing" | "profile";
 
-export interface DirectUploadTicket {
-  uploadURL: string;
-  id: string;
+export interface UploadOptions {
+  purpose: UploadPurpose;
+  listingId?: string;
 }
 
-export async function requestDirectUpload(
-  metadata?: Record<string, string>,
-): Promise<DirectUploadTicket> {
-  const response = await fetch("/api/images/direct-upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ metadata }),
-  });
-
-  const payload = (await response.json().catch(() => null)) as
-    | { uploadURL?: string; id?: string; error?: string }
-    | null;
-
-  if (!response.ok || !payload?.uploadURL || !payload?.id) {
-    throw new Error(payload?.error ?? "Could not start the photo upload.");
-  }
-
-  return { uploadURL: payload.uploadURL, id: payload.id };
+interface UploadResponse {
+  key?: string;
+  error?: string;
 }
 
 /** Human-readable rejection reason, or null when the file is acceptable. */
-export function validateImageFile(file: File, acceptedCount: number): string | null {
+export function validateImageFile(
+  file: File,
+  acceptedCount: number,
+): string | null {
   if (acceptedCount >= uploadLimits.maxImages) {
     return `You can add up to ${uploadLimits.maxImages} photos.`;
   }
-  if (!(uploadLimits.allowedMimeTypes as readonly string[]).includes(file.type)) {
-    return "Use a JPG, PNG, or WebP image.";
+  if (
+    !(uploadLimits.allowedMimeTypes as readonly string[]).includes(file.type)
+  ) {
+    return "Use a JPG, PNG, WebP, or AVIF image.";
   }
   if (file.size > uploadLimits.maxBytes) {
-    return `Each photo must be under ${Math.round(uploadLimits.maxBytes / (1024 * 1024))}MB.`;
+    return `Each photo must be under ${Math.round(
+      uploadLimits.maxBytes / (1024 * 1024),
+    )}MB.`;
   }
   return null;
 }
 
-/** Upload a single file to a Cloudflare direct-upload URL, reporting progress. */
-export function uploadToCloudflare(
-  uploadURL: string,
+function parseResponse(xhr: XMLHttpRequest): UploadResponse | null {
+  try {
+    return JSON.parse(xhr.responseText) as UploadResponse;
+  } catch {
+    return null;
+  }
+}
+
+/** Upload one processed image through the authenticated server route. */
+export function uploadImageFile(
   file: File,
+  options: UploadOptions,
   onProgress: (percent: number) => void,
-): Promise<void> {
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", uploadURL);
+    xhr.open("POST", "/api/images/upload");
+    xhr.responseType = "text";
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -64,18 +59,36 @@ export function uploadToCloudflare(
     };
 
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
+      const payload = parseResponse(xhr);
+      if (xhr.status >= 200 && xhr.status < 300 && payload?.key) {
         onProgress(100);
-        resolve();
-      } else {
-        reject(new Error("Upload failed. Please try again."));
+        resolve(payload.key);
+        return;
       }
+      reject(
+        new Error(payload?.error ?? "Upload failed. Please try again."),
+      );
     };
     xhr.onerror = () => reject(new Error("Network error during upload."));
     xhr.onabort = () => reject(new Error("Upload cancelled."));
 
     const form = new FormData();
     form.append("file", file);
+    form.append("purpose", options.purpose);
+    if (options.listingId) form.append("listingId", options.listingId);
     xhr.send(form);
   });
+}
+
+/** Best-effort removal of a newly uploaded photo that was never saved. */
+export async function deleteUploadedImage(key: string): Promise<void> {
+  try {
+    await fetch("/api/images", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key }),
+    });
+  } catch {
+    // The server-side cleanup path will handle abandoned objects later.
+  }
 }

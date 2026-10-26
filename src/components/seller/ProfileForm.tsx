@@ -6,6 +6,7 @@ import { AvatarUploader } from "@/components/seller/AvatarUploader";
 import { updateProfileAction } from "@/features/auth/profile-actions";
 import { CaretDownIcon, CheckIcon } from "@/components/brand/icons";
 import { ABUJA_AREAS, ALL_ABUJA } from "@/lib/areas";
+import { LAUNCH_CITY, NIGERIAN_CITIES } from "@/lib/cities";
 import { cn } from "@/lib/utils";
 
 const inputClass =
@@ -191,15 +192,27 @@ export function ProfileForm({
               <label htmlFor={cityId} className={labelClass}>
                 City
               </label>
-              <input
-                id={cityId}
-                name="city"
-                type="text"
-                maxLength={80}
-                defaultValue={initial.city || "Abuja"}
-                aria-invalid={Boolean(fieldErrors.city)}
-                className={inputClass}
-              />
+              <div className="relative">
+                <select
+                  id={cityId}
+                  name="city"
+                  defaultValue={
+                    NIGERIAN_CITIES.some((city) => city.supported && city.name === initial.city)
+                      ? initial.city
+                      : LAUNCH_CITY
+                  }
+                  aria-invalid={Boolean(fieldErrors.city)}
+                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]"
+                >
+                  {NIGERIAN_CITIES.map((city) => (
+                    <option key={city.name} value={city.name} disabled={!city.supported}>
+                      {city.name}
+                      {city.supported ? "" : " (coming soon)"}
+                    </option>
+                  ))}
+                </select>
+                <CaretDownIcon className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-gray)]" />
+              </div>
               <FieldError messages={fieldErrors.city} />
             </div>
 

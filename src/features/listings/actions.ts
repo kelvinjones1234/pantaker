@@ -22,8 +22,13 @@ import {
   isReactivatable,
 } from "@/features/listings/lifecycle";
 import type { ItemStatus } from "@/types/marketplace";
-import { deleteCloudflareImage } from "@/lib/cloudflare-images";
+import {
+  assertImageObjectsExist,
+  deleteStoredImage,
+} from "@/lib/image-storage";
 import { deleteUnreferencedImages } from "@/lib/image-cleanup";
+import { validateListingImageKeys } from "@/features/listings/image-keys";
+import { ImageValidationError } from "@/lib/storage/errors";
 import { getPrisma, isPrismaConfigured } from "@/lib/prisma";
 import { withUserContext, type TransactionClient } from "@/lib/db/context";
 
@@ -71,7 +76,7 @@ export async function createListingAction(formData: FormData) {
     .catch("publish")
     .parse(formData.get("intent"));
 
-  // Photos are uploaded straight to Cloudflare/local storage from the browser;
+  // Photos are uploaded straight to R2/local storage from the browser;
   // here we only receive the ordered list of image ids (first is the cover).
   let imageIds: string[] = [];
   const rawImageIds = formData.get("image_ids");
@@ -97,6 +102,32 @@ export async function createListingAction(formData: FormData) {
       };
     }
     imageIds = imagesParsed.data;
+  }
+
+  const imageCheck = validateListingImageKeys({
+    keys: imageIds,
+    userId: user.id,
+  });
+  if (!imageCheck.ok) {
+    return {
+      ok: false as const,
+      errors: { image_ids: [imageCheck.message] },
+    };
+  }
+
+  try {
+    await assertImageObjectsExist(imageCheck.newKeys);
+  } catch (error) {
+    return {
+      ok: false as const,
+      errors: {
+        image_ids: [
+          error instanceof ImageValidationError
+            ? error.message
+            : "We could not verify the uploaded photos. Please re-add them.",
+        ],
+      },
+    };
   }
 
   const slugBase = parsed.data.title
@@ -138,7 +169,7 @@ export async function createListingAction(formData: FormData) {
     });
   } catch {
     await Promise.all(
-      imageIds.map((imageId) => deleteCloudflareImage(imageId)),
+      imageIds.map((imageId) => deleteStoredImage(imageId)),
     );
     return {
       ok: false as const,
@@ -266,6 +297,17 @@ export async function updateListingAction(
     return { ok: false as const, errors: { _form: [message] } };
   }
 
+  let currentImagePaths: string[];
+  try {
+    const rows = await getPrisma().listingImage.findMany({
+      where: { listing_id: listingId },
+      select: { storage_path: true },
+    });
+    currentImagePaths = rows.map((row) => row.storage_path);
+  } catch {
+    return { ok: false as const, errors: { _form: [FORM_ERROR] } };
+  }
+
   // Photos are optional on edit: when present, `image_ids` is the full, ordered
   // set the seller wants to keep (existing ids plus newly uploaded ones).
   const rawEditImageIds = formData.get("image_ids");
@@ -294,6 +336,37 @@ export async function updateListingAction(
     imageIds = imagesParsed.data;
   }
 
+  let newImageKeys: string[] = [];
+  if (imageIds) {
+    const imageCheck = validateListingImageKeys({
+      keys: imageIds,
+      userId: user.id,
+      existingKeys: currentImagePaths,
+    });
+    if (!imageCheck.ok) {
+      return {
+        ok: false as const,
+        errors: { image_ids: [imageCheck.message] },
+      };
+    }
+    newImageKeys = imageCheck.newKeys;
+
+    try {
+      await assertImageObjectsExist(newImageKeys);
+    } catch (error) {
+      return {
+        ok: false as const,
+        errors: {
+          image_ids: [
+            error instanceof ImageValidationError
+              ? error.message
+              : "We could not verify the uploaded photos. Please re-add them.",
+          ],
+        },
+      };
+    }
+  }
+
   const stalePaths = await withUserContext(user, async (tx) => {
     const result = await tx.listing.updateMany({
       where: { id: listingId, seller_id: user.id },
@@ -312,6 +385,7 @@ export async function updateListingAction(
   }).catch(() => null);
 
   if (stalePaths === null) {
+    await Promise.all(newImageKeys.map((key) => deleteStoredImage(key)));
     return { ok: false as const, errors: { _form: [FORM_ERROR] } };
   }
 
