@@ -16,7 +16,7 @@ const minAgeHours = ageIndex >= 0 ? Number(args[ageIndex + 1]) : 24;
 const bucket = process.env.CLOUDFLARE_R2_BUCKET?.trim();
 const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY?.trim();
 const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_KEY?.trim();
-const endpoint = process.env.CLOUDFLARE_R2_BUCKET_ENDPOINT?.trim();
+const rawEndpoint = process.env.CLOUDFLARE_R2_BUCKET_ENDPOINT?.trim();
 const databaseUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 if (!Number.isFinite(minAgeHours) || minAgeHours < 1) {
@@ -27,9 +27,21 @@ if (!databaseUrl) {
   console.error("Missing DATABASE_URL or DIRECT_URL.");
   process.exit(1);
 }
-if (!bucket || !accessKeyId || !secretAccessKey || !endpoint) {
+if (!bucket || !accessKeyId || !secretAccessKey || !rawEndpoint) {
   console.error(
     "Missing Cloudflare R2 credentials. Set CLOUDFLARE_R2_BUCKET, CLOUDFLARE_R2_ACCESS_KEY, CLOUDFLARE_R2_SECRET_KEY, and CLOUDFLARE_R2_BUCKET_ENDPOINT.",
+  );
+  process.exit(1);
+}
+
+let endpoint;
+try {
+  const parsed = new URL(rawEndpoint);
+  if (parsed.protocol !== "https:") throw new Error("HTTPS is required.");
+  endpoint = parsed.origin;
+} catch {
+  console.error(
+    "CLOUDFLARE_R2_BUCKET_ENDPOINT must be a valid HTTPS endpoint. Do not include a bucket path.",
   );
   process.exit(1);
 }

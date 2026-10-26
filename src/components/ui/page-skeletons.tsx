@@ -143,33 +143,112 @@ export function MarketplaceBrowseSkeleton() {
   );
 }
 
+function QuickNavRailSkeleton() {
+  return (
+    <aside
+      aria-hidden="true"
+      className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 md:flex"
+    >
+      <div className="flex flex-col items-center gap-5 rounded-full bg-[var(--color-pure-white)] px-2.5 py-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-9 w-9 rounded-full" />
+        ))}
+      </div>
+      <div className="flex flex-col items-center rounded-full bg-[var(--color-pure-white)] px-2.5 py-3">
+        <Skeleton className="h-8 w-8 rounded-full bg-[var(--color-shop-violet)]" />
+      </div>
+    </aside>
+  );
+}
+
+function MobileQuickNavSkeleton() {
+  return (
+    <nav
+      aria-hidden="true"
+      className="fixed inset-x-0 bottom-0 z-50 flex items-stretch gap-1 border-t border-[var(--color-faint-border)] bg-[var(--overlay-paper-95)] px-2 pt-2 backdrop-blur-md md:hidden"
+      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+    >
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div
+          key={index}
+          className="flex min-h-12 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-[14px] px-1"
+        >
+          <Skeleton
+            className={cn(
+              "rounded-full",
+              index === 4
+                ? "h-7 w-7 bg-[var(--color-shop-violet)]"
+                : "h-5 w-5",
+            )}
+          />
+          <Skeleton className="h-2.5 w-10" />
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 export function ListingDetailSkeleton() {
   return (
     <LoadingRegion
       label="Loading listing"
-      className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6"
+      className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8 sm:px-6 md:pb-8 md:pl-24"
     >
-      <Skeleton className="h-3 w-36" />
+      <QuickNavRailSkeleton />
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-3 w-2" />
+        <Skeleton className="h-3 w-20" />
+      </div>
 
       <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-5">
           <div className="shop-card p-2.5">
             <Skeleton className="aspect-[4/3] w-full rounded-[20px]" />
+            <div className="mt-2.5 grid grid-cols-3 gap-2">
+              <Skeleton className="aspect-square w-full rounded-[16px]" />
+              <Skeleton className="aspect-square w-full rounded-[16px]" />
+              <Skeleton className="aspect-square w-full rounded-[16px]" />
+            </div>
           </div>
 
           <div className="shop-card p-5 sm:p-6">
             <Skeleton className="h-3 w-28" />
             <Skeleton className="mt-2 h-8 w-4/5 rounded-[10px]" />
-            <div className="mt-4 flex items-center gap-3">
-              <Skeleton className="h-5 w-24" />
+            <div className="mt-4 flex flex-wrap items-center gap-2.5">
+              <Skeleton className="h-6 w-28" />
               <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
             </div>
-            <Skeleton className="mt-4 h-3 w-56" />
-            <div className="mt-6 flex flex-col gap-2">
+            <div className="mt-3 flex flex-wrap gap-4">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+
+            <div className="mt-5">
               <Skeleton className="h-4 w-28 rounded-[8px]" />
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="mt-2 h-3 w-full" />
+              <Skeleton className="mt-2 h-3 w-full" />
+              <Skeleton className="mt-2 h-3 w-3/4" />
+            </div>
+
+            <div className="mt-5">
+              <Skeleton className="h-4 w-28 rounded-[8px]" />
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index}>
+                    <Skeleton className="h-2.5 w-16" />
+                    <Skeleton className="mt-1.5 h-3.5 w-24" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <Skeleton className="h-4 w-24 rounded-[8px]" />
+              <Skeleton className="mt-2 h-3 w-full" />
+              <Skeleton className="mt-2 h-3 w-2/3" />
             </div>
           </div>
         </div>
@@ -181,9 +260,13 @@ export function ListingDetailSkeleton() {
               <div className="min-w-0 flex-1">
                 <Skeleton className="h-3 w-16" />
                 <Skeleton className="mt-2 h-4 w-32 rounded-[8px]" />
+                <Skeleton className="mt-2 h-3 w-24" />
               </div>
             </div>
-            <Skeleton className="mt-6 h-11 w-full rounded-full" />
+            <Skeleton className="mt-4 h-3 w-full" />
+            <Skeleton className="mt-2 h-3 w-3/4" />
+            <Skeleton className="mt-3 h-3 w-36" />
+            <Skeleton className="mt-5 h-11 w-full rounded-full" />
           </div>
 
           <div className="shop-card p-5">
@@ -194,6 +277,33 @@ export function ListingDetailSkeleton() {
           </div>
         </div>
       </div>
+
+      <div className="mt-12 flex flex-col gap-10">
+        <section>
+          <div className="mb-4">
+            <Skeleton className="h-6 w-52 rounded-[8px]" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <ProductCardSkeleton key={index} />
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <Skeleton className="h-6 w-36 rounded-[8px]" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <ProductCardSkeleton key={index} />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <MobileQuickNavSkeleton />
     </LoadingRegion>
   );
 }
@@ -933,14 +1043,7 @@ export function HomePageSkeleton() {
       label="Loading Pantaker"
       className="relative min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]"
     >
-      <aside className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 md:flex">
-        <div className="flex flex-col items-center gap-3 rounded-full bg-[var(--color-pure-white)] px-2.5 py-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-9 w-9 rounded-full" />
-          ))}
-        </div>
-        <Skeleton className="h-9 w-9 rounded-full bg-[var(--color-shop-violet)]" />
-      </aside>
+      <QuickNavRailSkeleton />
 
       <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 md:pl-24 md:pr-8">
         <header className="mb-8 flex w-full flex-col items-center">
@@ -1079,6 +1182,8 @@ export function HomePageSkeleton() {
           </div>
         </footer>
       </div>
+
+      <MobileQuickNavSkeleton />
     </LoadingRegion>
   );
 }

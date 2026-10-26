@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   SAMPLE_CATEGORIES,
   SAMPLE_LISTINGS,
@@ -30,6 +31,34 @@ function coverImageUrl(rows: unknown): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+interface CardRow {
+  id: string;
+  title: string;
+  condition: string;
+  pricing_type: string;
+  price: number | null;
+  city: string;
+  area: string | null;
+  created_at: Date;
+  category: { name: string } | null;
+  images: Array<{ storage_path: string; sort_order: number }>;
+}
+
+function toCardListing(row: CardRow): CardListing {
+  return {
+    id: row.id,
+    title: row.title,
+    condition: row.condition as CardListing["condition"],
+    pricing_type: row.pricing_type,
+    price: row.price,
+    city: row.city,
+    area: row.area,
+    category: row.category?.name,
+    image: coverImageUrl(row.images),
+    created_at: row.created_at.toISOString(),
+  };
 }
 
 /** Resolve a category slug to its display name (sample data). */
@@ -183,19 +212,13 @@ export async function searchListings(filters: MarketplaceFilters): Promise<{
   return {
     live: true,
     total,
-    items: rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      condition: row.condition as CardListing["condition"],
-      pricing_type: row.pricing_type,
-      price: row.price,
-      city: row.city,
-      area: row.area,
-      category: row.category?.name,
-      image: coverImageUrl(row.images),
-      created_at: row.created_at.toISOString(),
-    })),
+    items: rows.map(toCardListing),
   };
+}
+
+export interface ListingDetailImage {
+  url: string;
+  alt: string | null;
 }
 
 export interface ListingDetail {
@@ -207,20 +230,27 @@ export interface ListingDetail {
   item_status: import("@/types/marketplace").ItemStatus;
   pricing_type: string;
   price: number | null;
+  negotiable: boolean;
   quantity: number | null;
   quantity_unit: string | null;
   city: string;
   area: string | null;
   pickup_notes: string | null;
+  published_at: string | null;
   created_at: string;
+  updated_at: string;
   category: { name: string; slug: string } | null;
-  images: string[];
+  images: ListingDetailImage[];
   seller: {
     id: string;
     display_name: string | null;
     username: string | null;
     avatar_path: string | null;
     city: string | null;
+    area: string | null;
+    bio: string | null;
+    account_type: string;
+    created_at: string;
   } | null;
   /** True when the row came from SAMPLE_LISTINGS (local preview only). */
   sample: boolean;
@@ -228,104 +258,220 @@ export interface ListingDetail {
 
 /**
  * A single public listing for the detail page. Only published rows are returned;
- * sellers preview drafts through the seller dashboard instead.
+ * sellers preview drafts through the seller dashboard instead. Cached per
+ * request so metadata and page rendering share one query.
  */
-export async function getListingDetail(
-  id: string,
-): Promise<ListingDetail | null> {
-  if (!isPrismaConfigured()) {
-    const sample = SAMPLE_LISTINGS.find((item) => item.id === id);
-    if (!sample) return null;
-    return {
-      id: sample.id,
-      seller_id: "",
-      title: sample.title,
-      description: null,
-      condition: sample.condition,
-      item_status: "published",
-      pricing_type: sample.pricing_type,
-      price: sample.price,
-      quantity: null,
-      quantity_unit: null,
-      city: sample.city,
-      area: sample.area ?? null,
-      pickup_notes: null,
-      created_at: sample.created_at,
-      category: { name: sample.category, slug: slugify(sample.category) },
-      images: sample.image ? [sample.image] : [],
-      seller: null,
-      sample: true,
-    };
-  }
+export const getListingDetail = cache(
+  async (id: string): Promise<ListingDetail | null> => {
+    if (!isPrismaConfigured()) {
+      const sample = SAMPLE_LISTINGS.find((item) => item.id === id);
+      if (!sample) return null;
+      return {
+        id: sample.id,
+        seller_id: "",
+        title: sample.title,
+        description: null,
+        condition: sample.condition,
+        item_status: "published",
+        pricing_type: sample.pricing_type,
+        price: sample.price,
+        negotiable: false,
+        quantity: null,
+        quantity_unit: null,
+        city: sample.city,
+        area: sample.area ?? null,
+        pickup_notes: null,
+        published_at: sample.created_at,
+        created_at: sample.created_at,
+        updated_at: sample.created_at,
+        category: { name: sample.category, slug: slugify(sample.category) },
+        images: sample.image
+          ? [{ url: sample.image, alt: sample.title }]
+          : [],
+        seller: null,
+        sample: true,
+      };
+    }
 
-  const row = await getPrisma().listing.findFirst({
-    where: { id, item_status: "published" },
-    select: {
-      id: true,
-      seller_id: true,
-      title: true,
-      description: true,
-      condition: true,
-      item_status: true,
-      pricing_type: true,
-      price: true,
-      quantity: true,
-      quantity_unit: true,
-      city: true,
-      area: true,
-      pickup_notes: true,
-      created_at: true,
-      category: { select: { name: true, slug: true } },
-      images: {
-        select: { storage_path: true, sort_order: true },
-        orderBy: { sort_order: "asc" },
-      },
-      seller: {
-        select: {
-          profile: {
-            select: {
-              id: true,
-              display_name: true,
-              username: true,
-              avatar_path: true,
-              city: true,
+    const row = await getPrisma().listing.findFirst({
+      where: { id, item_status: "published" },
+      select: {
+        id: true,
+        seller_id: true,
+        title: true,
+        description: true,
+        condition: true,
+        item_status: true,
+        pricing_type: true,
+        price: true,
+        negotiable: true,
+        quantity: true,
+        quantity_unit: true,
+        city: true,
+        area: true,
+        pickup_notes: true,
+        published_at: true,
+        created_at: true,
+        updated_at: true,
+        category: { select: { name: true, slug: true } },
+        images: {
+          select: { storage_path: true, alt_text: true, sort_order: true },
+          orderBy: { sort_order: "asc" },
+        },
+        seller: {
+          select: {
+            profile: {
+              select: {
+                id: true,
+                display_name: true,
+                username: true,
+                avatar_path: true,
+                city: true,
+                area: true,
+                bio: true,
+                account_type: true,
+                created_at: true,
+              },
             },
           },
         },
       },
-    },
-  });
-  if (!row) return null;
+    });
+    if (!row) return null;
 
-  const images = row.images.flatMap((image) => {
-    if (!isImageStorageConfigured() || !image.storage_path) return [];
-    try {
-      return [deliveryUrl(image.storage_path)];
-    } catch {
-      return [];
-    }
-  });
+    const images = row.images.flatMap((image) => {
+      if (!isImageStorageConfigured() || !image.storage_path) return [];
+      try {
+        return [
+          {
+            url: deliveryUrl(image.storage_path),
+            alt: image.alt_text ?? row.title,
+          },
+        ];
+      } catch {
+        return [];
+      }
+    });
 
-  return {
-    id: row.id,
-    seller_id: row.seller_id,
-    title: row.title,
-    description: row.description,
-    condition: row.condition as CardListing["condition"],
-    item_status: row.item_status as import("@/types/marketplace").ItemStatus,
-    pricing_type: row.pricing_type,
-    price: row.price,
-    quantity: row.quantity === null ? null : Number(row.quantity),
-    quantity_unit: row.quantity_unit,
-    city: row.city,
-    area: row.area,
-    pickup_notes: row.pickup_notes,
-    created_at: row.created_at.toISOString(),
-    category: row.category,
-    images,
-    seller: row.seller?.profile ?? null,
-    sample: false,
-  };
+    const seller = row.seller?.profile;
+
+    return {
+      id: row.id,
+      seller_id: row.seller_id,
+      title: row.title,
+      description: row.description,
+      condition: row.condition as CardListing["condition"],
+      item_status: row.item_status as import("@/types/marketplace").ItemStatus,
+      pricing_type: row.pricing_type,
+      price: row.price,
+      negotiable: row.negotiable,
+      quantity: row.quantity === null ? null : Number(row.quantity),
+      quantity_unit: row.quantity_unit,
+      city: row.city,
+      area: row.area,
+      pickup_notes: row.pickup_notes,
+      published_at: row.published_at?.toISOString() ?? null,
+      created_at: row.created_at.toISOString(),
+      updated_at: row.updated_at.toISOString(),
+      category: row.category,
+      images,
+      seller: seller
+        ? { ...seller, created_at: seller.created_at.toISOString() }
+        : null,
+      sample: false,
+    };
+  },
+);
+
+export interface RelatedListings {
+  seller: CardListing[];
+  similar: CardListing[];
+}
+
+const relatedCardSelect = {
+  id: true,
+  title: true,
+  condition: true,
+  pricing_type: true,
+  price: true,
+  city: true,
+  area: true,
+  created_at: true,
+  category: { select: { name: true } },
+  images: {
+    select: { storage_path: true, sort_order: true },
+    orderBy: { sort_order: "asc" as const },
+  },
+} satisfies Prisma.ListingSelect;
+
+/** Published items from the same seller, then same-category items. */
+export async function getRelatedListings({
+  sellerId,
+  categorySlug,
+  excludeId,
+  limit = 3,
+}: {
+  sellerId: string | null;
+  categorySlug: string | null;
+  excludeId: string;
+  limit?: number;
+}): Promise<RelatedListings> {
+  if (!isPrismaConfigured()) {
+    const similar = SAMPLE_LISTINGS.filter(
+      (item) =>
+        item.id !== excludeId &&
+        (!categorySlug || slugify(item.category) === categorySlug),
+    )
+      .slice(0, limit)
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        condition: item.condition,
+        pricing_type: item.pricing_type,
+        price: item.price,
+        city: item.city,
+        area: item.area,
+        category: item.category,
+        image: item.image,
+        created_at: item.created_at,
+      }));
+    return { seller: [], similar };
+  }
+
+  const prisma = getPrisma();
+  const orderBy: Prisma.ListingOrderByWithRelationInput[] = [
+    { published_at: { sort: "desc", nulls: "last" } },
+  ];
+
+  const sellerRows = sellerId
+    ? await prisma.listing.findMany({
+        where: {
+          seller_id: sellerId,
+          item_status: "published",
+          id: { not: excludeId },
+        },
+        orderBy,
+        take: limit,
+        select: relatedCardSelect,
+      })
+    : [];
+  const seller = sellerRows.map(toCardListing);
+
+  const excludedIds = [excludeId, ...seller.map((item) => item.id)];
+  const similarRows = categorySlug
+    ? await prisma.listing.findMany({
+        where: {
+          item_status: "published",
+          id: { notIn: excludedIds },
+          category: { slug: categorySlug },
+        },
+        orderBy,
+        take: limit,
+        select: relatedCardSelect,
+      })
+    : [];
+
+  return { seller, similar: similarRows.map(toCardListing) };
 }
 
 export async function getCategories() {

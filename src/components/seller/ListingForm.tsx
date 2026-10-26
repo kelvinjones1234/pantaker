@@ -2,12 +2,7 @@
 
 import { useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  CaretDownIcon,
-  CheckIcon,
-  EyeIcon,
-} from "@/components/brand/icons";
+import { CaretDownIcon, CheckIcon } from "@/components/brand/icons";
 import {
   ImageUploader,
   type UploadedImage,
@@ -20,7 +15,6 @@ import { createListingSchema } from "@/lib/validation/listings";
 import { weightUnits } from "@/config/site";
 import { ABUJA_AREAS, ALL_ABUJA } from "@/lib/areas";
 import { CONDITION_LABELS, PRICING_LABELS } from "@/types/marketplace";
-import { formatNGN } from "@/lib/utils";
 
 const inputClass =
   "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
@@ -153,7 +147,6 @@ export function ListingForm({
       progress: 100,
     })),
   );
-  const [reviewMode, setReviewMode] = useState(false);
   const [result, setResult] = useState<{ intent: "draft" | "publish" } | null>(
     null,
   );
@@ -220,7 +213,6 @@ export function ListingForm({
       setErrorMsg(
         Object.values(errors)[0]?.[0] ?? "Please fix the highlighted fields.",
       );
-      setReviewMode(false);
       const firstInvalid = formRef.current?.querySelector<HTMLElement>(
         '[aria-invalid="true"]',
       );
@@ -247,7 +239,6 @@ export function ListingForm({
           const errors = res.errors as Record<string, string[] | undefined>;
           if (errors._form?.length) setErrorMsg(errors._form[0]);
           setFieldErrors(errors as Record<string, string[]>);
-          setReviewMode(false);
           return;
         }
         setResult({ intent });
@@ -259,11 +250,6 @@ export function ListingForm({
         submittingRef.current = false;
       }
     });
-  };
-
-  const reviewPrimary = () => {
-    if (mode === "create") runSave("publish");
-    else runSave("publish");
   };
 
   if (result) {
@@ -597,50 +583,13 @@ export function ListingForm({
 
       <Section
         step="5"
-        title="Preview and publish"
-        description="Check the details below, then publish or save for later."
+        title={mode === "create" ? "Publish" : "Save changes"}
+        description={
+          mode === "create"
+            ? "Publish now, or save it as a draft and finish later."
+            : "Save your changes. The listing status stays the same."
+        }
       >
-        {reviewMode && (
-          <div className="rounded-[20px] bg-[var(--color-canvas-mist)] p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted-gray)]">
-              Buyer preview
-            </p>
-            <div className="mt-3 flex gap-3">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[16px] bg-[var(--color-pure-white)]">
-                {images[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={images[0].previewUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-full items-center justify-center text-[11px] text-[var(--color-muted-gray)]">
-                    No photo
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
-                  {title || "Untitled listing"}
-                </p>
-                <p className="font-sans tabular mt-0.5 text-[14px] font-semibold text-[var(--color-ink-black)]">
-                  {pricingType === "free"
-                    ? "Free"
-                    : pricingType === "offer"
-                      ? "Accepting offers"
-                      : priceValue(formRef) != null
-                        ? formatNGN(priceValue(formRef))
-                        : "No price set"}
-                </p>
-                <p className="mt-0.5 line-clamp-2 text-[12px] text-[var(--color-muted-gray)]">
-                  {description || "No description yet."}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {errorMsg && (
           <p role="alert" className="text-xs text-[var(--color-error)]">
             {errorMsg}
@@ -648,70 +597,28 @@ export function ListingForm({
         )}
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          {reviewMode ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setReviewMode(false)}
-                className="inline-flex h-[52px] cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-6 text-sm font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-30)]"
-              >
-                Back to edit
-              </button>
-              <button
-                type="button"
-                onClick={reviewPrimary}
-                disabled={isPending || uploading}
-                className="inline-flex h-[52px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--color-shop-violet)] px-6 text-sm font-semibold text-[var(--color-pure-white)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
-              >
-                {mode === "create" ? "Publish listing" : "Save changes"}
-                {!isPending && <ArrowRightIcon className="h-4 w-4" />}
-              </button>
-            </>
-          ) : (
-            <>
-              {mode === "create" && (
-                <button
-                  type="button"
-                  onClick={() => runSave("draft")}
-                  disabled={isPending || uploading}
-                  className="inline-flex h-[52px] cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-6 text-sm font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-30)] disabled:cursor-wait disabled:opacity-60"
-                >
-                  Save as draft
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setErrorMsg(null);
-                  setFieldErrors({});
-                  const parsed = validate();
-                  if (!parsed.success) {
-                    const errors = parsed.error.flatten().fieldErrors as Record<
-                      string,
-                      string[]
-                    >;
-                    setFieldErrors(errors);
-                    setErrorMsg(
-                      Object.values(errors)[0]?.[0] ??
-                        "Please fix the highlighted fields.",
-                    );
-                    const firstInvalid =
-                      formRef.current?.querySelector<HTMLElement>(
-                        '[aria-invalid="true"]',
-                      );
-                    firstInvalid?.focus();
-                    return;
-                  }
-                  setReviewMode(true);
-                }}
-                disabled={isPending || uploading}
-                className="inline-flex h-[52px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--color-shop-violet)] px-6 text-sm font-semibold text-[var(--color-pure-white)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
-              >
-                <EyeIcon className="h-4 w-4" />
-                {mode === "create" ? "Review & publish" : "Review changes"}
-              </button>
-            </>
+          {mode === "create" && (
+            <button
+              type="button"
+              onClick={() => runSave("draft")}
+              disabled={isPending || uploading}
+              className="inline-flex h-[52px] cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-6 text-sm font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-30)] disabled:cursor-wait disabled:opacity-60"
+            >
+              Save as draft
+            </button>
           )}
+          <button
+            type="button"
+            onClick={() => runSave("publish")}
+            disabled={isPending || uploading}
+            className="inline-flex h-[52px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--color-shop-violet)] px-6 text-sm font-semibold text-[var(--color-pure-white)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
+          >
+            {isPending
+              ? "Saving…"
+              : mode === "create"
+                ? "Publish listing"
+                : "Save changes"}
+          </button>
         </div>
 
         <p className="text-[12px] text-[var(--color-muted-gray)]">
@@ -722,16 +629,4 @@ export function ListingForm({
       </Section>
     </form>
   );
-}
-
-/** Read the current price field straight from the DOM for the live preview. */
-function priceValue(
-  formRef: React.RefObject<HTMLFormElement | null>,
-): number | null {
-  const field = formRef.current?.elements.namedItem(
-    "price",
-  ) as HTMLInputElement | null;
-  if (!field || !field.value) return null;
-  const value = Number(field.value);
-  return Number.isFinite(value) ? value : null;
 }

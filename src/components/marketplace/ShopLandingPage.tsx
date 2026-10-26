@@ -35,6 +35,12 @@ import {
   type BrandIconComponent,
 } from "@/components/brand/icons";
 import { Logo } from "@/components/brand/Logo";
+import {
+  MobileProfileLink,
+  MobileQuickNav,
+  mobileNavItemClass,
+  QuickNavRail,
+} from "@/components/marketplace/QuickNavRail";
 import { ConditionBadge } from "@/components/ui/badge";
 import { pricingLabel, timeAgo } from "@/lib/utils";
 import { ABUJA_AREAS } from "@/lib/areas";
@@ -716,64 +722,47 @@ export function ShopLandingPage({
       className="relative min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]"
     >
       {/* 1. FLOATING LEFT NAV RAIL DOCK */}
-      <aside
-        className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 md:flex"
-        aria-label="Quick navigation"
-      >
-        <div className="pointer-events-auto flex flex-col items-center gap-5 rounded-full bg-[var(--color-pure-white)] px-2.5 py-4">
-          <button
-            type="button"
-            onClick={() => scrollToId("top")}
-            aria-label="Home"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-ink-black)] transition-colors hover:bg-[var(--color-canvas-mist)]"
-          >
-            <HomeIcon className="h-[22px] w-[22px]" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToId("departments")}
-            aria-label="Departments"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]"
-          >
-            <GridIcon className="h-[21px] w-[21px]" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToId("feed")}
-            aria-label="Marketplace feed"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]"
-          >
-            <TagIcon className="h-[21px] w-[21px]" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToId("how")}
-            aria-label="How it works"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors hover:text-[var(--color-ink-black)]"
-          >
-            <WrenchIcon className="h-[21px] w-[21px]" />
-          </button>
-        </div>
-        <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-full bg-[var(--color-pure-white)] px-2.5 py-3">
-          <Link
-            href={user ? "/seller" : "/login?next=/seller"}
-            aria-label={user ? "Open seller dashboard" : "Sign in to Pantaker"}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-sm font-semibold tracking-wide text-[var(--color-pure-white)] ring-1 ring-[var(--color-faint-border)] transition-opacity duration-200 hover:opacity-90"
-          >
-            {user ? (user.email?.[0]?.toUpperCase() ?? "P") : "P"}
-          </Link>
-        </div>
-      </aside>
-
-      {/* MOBILE BOTTOM DOCK */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-[var(--color-faint-border)] bg-[var(--overlay-paper-95)] px-3 py-2 backdrop-blur-md md:hidden"
-        aria-label="Mobile navigation"
-      >
+      <QuickNavRail user={user}>
         <button
           type="button"
           onClick={() => scrollToId("top")}
-          className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-ink-black)]"
+          aria-label="Home"
+          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-ink-black)] transition-colors duration-200 hover:bg-[var(--color-canvas-mist)]"
+        >
+          <HomeIcon className="h-[22px] w-[22px]" />
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollToId("departments")}
+          aria-label="Departments"
+          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:text-[var(--color-ink-black)]"
+        >
+          <GridIcon className="h-[21px] w-[21px]" />
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollToId("feed")}
+          aria-label="Marketplace feed"
+          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:text-[var(--color-ink-black)]"
+        >
+          <TagIcon className="h-[21px] w-[21px]" />
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollToId("how")}
+          aria-label="How it works"
+          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:text-[var(--color-ink-black)]"
+        >
+          <WrenchIcon className="h-[21px] w-[21px]" />
+        </button>
+      </QuickNavRail>
+
+      {/* MOBILE BOTTOM DOCK */}
+      <MobileQuickNav>
+        <button
+          type="button"
+          onClick={() => scrollToId("top")}
+          className={mobileNavItemClass}
         >
           <HomeIcon className="h-5 w-5" />
           <span>Home</span>
@@ -781,7 +770,8 @@ export function ShopLandingPage({
         <button
           type="button"
           onClick={() => scrollToId("departments")}
-          className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-muted-gray)]"
+          aria-label="Browse departments"
+          className={mobileNavItemClass}
         >
           <GridIcon className="h-5 w-5" />
           <span>Shop</span>
@@ -789,20 +779,23 @@ export function ShopLandingPage({
         <button
           type="button"
           onClick={() => scrollToId("feed")}
-          aria-label="Browse feed"
-          className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-[var(--color-pure-white)] ring-4 ring-[var(--color-pure-white)]"
+          aria-label="Marketplace feed"
+          className={mobileNavItemClass}
         >
-          <SearchIcon className="h-6 w-6" />
+          <TagIcon className="h-5 w-5" />
+          <span>Feed</span>
         </button>
         <button
           type="button"
           onClick={() => scrollToId("how")}
-          className="flex flex-col items-center gap-0.5 text-xs font-medium text-[var(--color-muted-gray)]"
+          aria-label="How it works"
+          className={mobileNavItemClass}
         >
           <WrenchIcon className="h-5 w-5" />
           <span>How</span>
         </button>
-      </nav>
+        <MobileProfileLink user={user} />
+      </MobileQuickNav>
 
       {/* MAIN VIEWPORT */}
       <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 md:pl-24 md:pr-8">
@@ -1005,7 +998,13 @@ export function ShopLandingPage({
                     </span>
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/marketplace/listing/${activeFeature.id}`}
+                    className="rounded-full bg-[var(--color-shop-violet)] px-6 py-2.5 text-[13px] font-semibold tracking-tight text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90"
+                  >
+                    View listing
+                  </Link>
                   <button
                     type="button"
                     onClick={() => {
@@ -1044,17 +1043,11 @@ export function ShopLandingPage({
               {heroGrid.length > 0 && (
                 <div className="grid w-full shrink-0 grid-cols-2 gap-3 lg:w-[460px] xl:w-[490px]">
                   {heroGrid.slice(0, 4).map((item) => (
-                    <button
+                    <Link
                       key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery(
-                          item.title.split(" ").slice(0, 2).join(" "),
-                        );
-                        scrollToId("feed");
-                      }}
+                      href={`/marketplace/listing/${item.id}`}
                       className="group relative aspect-[4/4.5] overflow-hidden rounded-[20px] bg-neutral-800 text-left"
-                      aria-label={`Search for ${item.title}`}
+                      aria-label={`View ${item.title}`}
                     >
                       {item.image ? (
                         <StorageImage
@@ -1072,7 +1065,7 @@ export function ShopLandingPage({
                       <span className="font-sans tabular absolute left-2.5 top-2.5 rounded-full border border-[var(--overlay-paper-border-10)] bg-[var(--overlay-ink-45)] px-2.5 py-1 text-xs font-medium tracking-tight text-[var(--color-pure-white)] backdrop-blur-md">
                         {pricingLabel(item.pricing_type, item.price)}
                       </span>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -1192,8 +1185,10 @@ export function ShopLandingPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {curated.map((item) => {
                 return (
-                  <article
+                  <Link
                     key={item.id}
+                    href={`/marketplace/listing/${item.id}`}
+                    aria-label={`View ${item.title}`}
                     className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5"
                   >
                     <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-neutral-100">
@@ -1231,7 +1226,7 @@ export function ShopLandingPage({
                         {timeAgo(item.created_at)}
                       </p>
                     </div>
-                  </article>
+                  </Link>
                 );
               })}
             </div>
@@ -1335,9 +1330,11 @@ export function ShopLandingPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {filteredListings.map((item) => {
                 return (
-                  <article
+                  <Link
                     key={item.id}
-                    className="shop-card group flex flex-col p-2.5 transition-all hover:-translate-y-0.5"
+                    href={`/marketplace/listing/${item.id}`}
+                    aria-label={`View ${item.title}`}
+                    className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5"
                   >
                     <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-neutral-100">
                       {item.image ? (
@@ -1374,7 +1371,7 @@ export function ShopLandingPage({
                         {timeAgo(item.created_at)}
                       </p>
                     </div>
-                  </article>
+                  </Link>
                 );
               })}
             </div>

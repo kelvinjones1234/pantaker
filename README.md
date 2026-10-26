@@ -87,8 +87,8 @@ The access key and secret are server-only; never prefix them with
 Next.js can allow the image host. Uploads are proxied through the Next.js server,
 so R2 does not need browser CORS rules for uploads.
 
-Verify write and delete access before uploading (the check creates and removes a
-temporary `healthcheck/` object):
+Verify write, delete, and public read access before uploading (the check creates
+and removes a temporary `healthcheck/` object):
 
 ```bash
 npm run r2:check
@@ -109,6 +109,11 @@ Object keys are scoped by owner:
 The server accepts images up to 10 MB and converts them to WebP. On Vercel,
 serverless request bodies are capped at about 4.5 MB; lower the configured limit
 or deploy the route on infrastructure that accepts larger request bodies.
+
+If `npm run r2:check` reports that S3 works but public delivery returns `404`,
+enable **Public Access** for the bucket in the Cloudflare dashboard (or connect a
+custom domain) and make sure `NEXT_PUBLIC_R2_PUBLIC_DOMAIN` points at that exact
+public host.
 
 Existing `local-*` image IDs from development are not valid R2 objects;
 re-upload those photos after switching modes. Legacy Cloudflare Images IDs and

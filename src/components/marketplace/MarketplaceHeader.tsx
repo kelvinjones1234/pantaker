@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowRightIcon,
+  BellIcon,
+  ChatIcon,
   PlusIcon,
   SearchIcon,
+  UserIcon,
   XIcon,
 } from "@/components/brand/icons";
 import { Logo } from "@/components/brand/Logo";
@@ -19,6 +22,8 @@ export function MarketplaceHeader({
   user?: { email?: string | null; isAdmin?: boolean } | null;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isListingDetail = pathname.startsWith("/marketplace/listing/");
   const [value, setValue] = useState(initialQuery);
 
   const submit = (event: React.FormEvent) => {
@@ -74,36 +79,46 @@ export function MarketplaceHeader({
         </form>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
-          <Link
-            href="/marketplace"
-            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)]"
-          >
-            Browse
-          </Link>
-          <Link
-            href="/#how"
-            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
-          >
-            How it works
-          </Link>
+          {!isListingDetail && (
+            <>
+              <Link
+                href="/marketplace"
+                className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)]"
+              >
+                Browse
+              </Link>
+              <Link
+                href="/#how"
+                className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+              >
+                How it works
+              </Link>
+            </>
+          )}
           <Link
             href="/messages"
-            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+            aria-label="Messages"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
           >
-            Messages
+            <ChatIcon className="h-5 w-5" />
           </Link>
-          <Link
-            href="/notifications"
-            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
-          >
-            Notifications
-          </Link>
-          <Link
-            href={user ? "/seller" : "/login?next=/seller"}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
-          >
-            {user ? "Seller Centre" : "Sign in"}
-          </Link>
+          {user && (
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+            >
+              <BellIcon className="h-5 w-5" />
+            </Link>
+          )}
+          {user && (
+            <Link
+              href="/seller"
+              className="rounded-full px-3 py-2 text-sm font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+            >
+              Seller Centre
+            </Link>
+          )}
           {user?.isAdmin && (
             <Link
               href="/admin"
@@ -114,13 +129,15 @@ export function MarketplaceHeader({
           )}
         </nav>
 
-        <Link
-          href={user ? "/seller" : "/login?next=/seller"}
-          aria-label={user ? "Open seller dashboard" : "Sign in to Pantaker"}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 sm:h-10 sm:w-10"
-        >
-          {user?.email?.[0]?.toUpperCase() ?? "P"}
-        </Link>
+        {!isListingDetail && (
+          <Link
+            href={user ? "/seller" : "/login?next=/seller"}
+            aria-label={user ? "Open seller dashboard" : "Sign in to Pantaker"}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 sm:h-10 sm:w-10"
+          >
+            {user?.email?.[0]?.toUpperCase() ?? <UserIcon className="h-4 w-4" />}
+          </Link>
+        )}
 
         <Link
           href="/sell"

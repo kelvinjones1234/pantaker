@@ -5,6 +5,7 @@
   "description": "PANTAKER \u2014 Give unwanted things another chance. Circular economy marketplace landing page for Abuja, Nigeria.",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/ensure-no-dev-server.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

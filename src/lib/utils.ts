@@ -24,6 +24,34 @@ export function pricingLabel(
   return formatNGN(price);
 }
 
+export function formatQuantity(
+  quantity: number | null | undefined,
+  unit: string | null | undefined,
+): string | null {
+  if (quantity == null) return null;
+
+  const amount = new Intl.NumberFormat("en-NG", {
+    maximumFractionDigits: 3,
+  }).format(quantity);
+  const normalized = unit?.trim().toLowerCase();
+
+  if (!normalized || normalized === "item") {
+    return `${amount} ${quantity === 1 ? "item" : "items"}`;
+  }
+  if (normalized === "tonnes") return `${amount} t`;
+  if (normalized === "grams") return `${amount} g`;
+  return `${amount} ${normalized}`;
+}
+
+export function formatLongDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "";
   const then = new Date(iso).getTime();

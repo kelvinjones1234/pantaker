@@ -9,7 +9,6 @@ import {
   listingIntentSchema,
   reportSchema,
 } from "@/lib/validation/listings";
-import { uploadLimits } from "@/config/site";
 import {
   assertOwnedBy,
   OwnershipError,
@@ -615,5 +614,3 @@ export async function reportListingAction(
 
   return { ok: true as const };
 }
-
-export { uploadLimits };
