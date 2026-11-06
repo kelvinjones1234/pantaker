@@ -35,6 +35,7 @@ const {
     }>,
     updateCount: 1,
     createError: null as unknown,
+    onlineOrder: null as unknown,
   },
 }));
 
@@ -55,7 +56,12 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/db/context", () => ({
   withUserContext: async (_user: unknown, work: (tx: unknown) => unknown) =>
     work({
+      $executeRaw: async () => 1,
+      order: {
+        findFirst: async () => holder.onlineOrder,
+      },
       sale: {
+        findFirst: async () => null,
         create: async (args: { data: Record<string, unknown> }) => {
           holder.saleInserts.push(args.data);
           if (holder.createError) throw holder.createError;
@@ -118,6 +124,7 @@ beforeEach(() => {
   holder.saleUpdates = [];
   holder.updateCount = 1;
   holder.createError = null;
+  holder.onlineOrder = null;
 });
 
 afterEach(() => {
@@ -173,6 +180,14 @@ describe("createSaleAction", () => {
     const res = await createSaleAction(formData({ listing_id: LISTING_ID }));
     expect(res.ok).toBe(false);
     expect(errorOf(res)).toMatch(/in progress/i);
+    expect(holder.saleInserts).toHaveLength(0);
+  });
+
+  it("refuses a sale while an online order is active", async () => {
+    holder.onlineOrder = { id: "order-1" };
+    const res = await createSaleAction(formData({ listing_id: LISTING_ID }));
+    expect(res.ok).toBe(false);
+    expect(errorOf(res)).toMatch(/online order/i);
     expect(holder.saleInserts).toHaveLength(0);
   });
 

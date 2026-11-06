@@ -17,9 +17,10 @@ import {
 } from "@/features/listings/ownership";
 import {
   canTransition,
-  canDelete,
   isReactivatable,
 } from "@/features/listings/lifecycle";
+import { ACTIVE_ORDER_STATUSES } from "@/features/orders/lifecycle";
+import { ACTIVE_SALE_STATUSES } from "@/features/sales/lifecycle";
 import type { ItemStatus } from "@/types/marketplace";
 import {
   assertImageObjectsExist,
@@ -542,25 +543,58 @@ export async function deleteListingAction(listingId: string) {
     return { ok: false as const, error: message };
   }
 
-  if (!canDelete(record!.item_status as ItemStatus)) {
-    return {
-      ok: false as const,
-      error: "Archive this listing before deleting it.",
-    };
-  }
-
   const imagePaths = record!.images
     .map((image) => image.storage_path)
     .filter(
       (path): path is string => typeof path === "string" && path.length > 0,
     );
 
+  let blocked: "order" | "sale" | null = null;
   try {
-    const result = await withUserContext(user, (tx) =>
-      tx.listing.deleteMany({
+    const result = await withUserContext(user, async (tx) => {
+      const activeOrder = await tx.order.findFirst({
+        where: {
+          listing_id: listingId,
+          status: { in: [...ACTIVE_ORDER_STATUSES] },
+        },
+        select: { id: true },
+      });
+      if (activeOrder) {
+        blocked = "order";
+        return { count: 0 };
+      }
+
+      const activeSale = await tx.sale.findFirst({
+        where: {
+          listing_id: listingId,
+          status: { in: [...ACTIVE_SALE_STATUSES] },
+        },
+        select: { id: true },
+      });
+      if (activeSale) {
+        blocked = "sale";
+        return { count: 0 };
+      }
+
+      return tx.listing.deleteMany({
         where: { id: listingId, seller_id: user.id },
-      }),
-    );
+      });
+    });
+
+    if (blocked === "order") {
+      return {
+        ok: false as const,
+        error:
+          "This listing has an active order. Wait for it to be resolved before deleting.",
+      };
+    }
+    if (blocked === "sale") {
+      return {
+        ok: false as const,
+        error:
+          "This listing has an active sale. Cancel the sale before deleting.",
+      };
+    }
     if (result.count === 0) {
       return {
         ok: false as const,

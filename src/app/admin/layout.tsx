@@ -47,7 +47,7 @@ export default async function AdminLayout({
               href="/seller"
               className="hidden rounded-full px-3 py-2 text-xs font-semibold text-[var(--color-muted-gray)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)] sm:inline-flex"
             >
-              Seller Centre
+              Dashboard
             </Link>
             {admin.email && (
               <span
@@ -60,7 +60,7 @@ export default async function AdminLayout({
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+                className="inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
               >
                 Sign out
               </button>

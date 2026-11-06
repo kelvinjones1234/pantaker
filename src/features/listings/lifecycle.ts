@@ -83,11 +83,18 @@ export function canTransition(from: ItemStatus, to: ItemStatus): boolean {
 }
 
 /**
- * Deletion is allowed for anything that is not (or is no longer) live. A live
- * listing must be archived first, so the destructive action never competes with
- * the primary "manage live item" flow.
+ * Every listing can be deleted from the seller's management menu. The server
+ * blocks deletion while an online order or manual sale is still active, so a
+ * destructive click can never strand money or an in-flight transaction.
  */
-const DELETE_ELIGIBLE: ItemStatus[] = ["draft", "pending_review", "rejected", "archived", "sold"];
+const DELETE_ELIGIBLE: ItemStatus[] = [
+  "draft",
+  "pending_review",
+  "published",
+  "rejected",
+  "sold",
+  "archived",
+];
 
 export function canDelete(status: ItemStatus): boolean {
   return DELETE_ELIGIBLE.includes(status);

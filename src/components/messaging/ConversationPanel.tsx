@@ -40,7 +40,7 @@ export function ConversationPanel({
     <div className="flex flex-col gap-4">
       <Link
         href={basePath}
-        className="text-[12px] font-semibold text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
+        className="inline-flex min-h-11 items-center text-[12px] font-semibold text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
       >
         ← {backLabel}
       </Link>
@@ -66,7 +66,7 @@ export function ConversationPanel({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="shop-card flex max-h-[70vh] min-h-[55vh] flex-col p-4 sm:p-5">
+        <div className="shop-card flex max-h-[70dvh] min-h-[55dvh] flex-col p-4 sm:p-5">
           <MessageThread
             conversationId={detail.conversation.id}
             currentUserId={currentUserId}

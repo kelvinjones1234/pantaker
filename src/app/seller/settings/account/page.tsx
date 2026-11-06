@@ -24,7 +24,7 @@ export default async function AccountSettingsPage() {
     <div className="flex flex-col gap-5">
       <SellerPageHeader
         title="Account"
-        description="Your sign-in identity. Pantaker is passwordless — you sign in with a one-time code, so there's no password to manage."
+        description="Your sign-in identity. You sign in with your email address and password."
       />
 
       <SettingsCard
@@ -48,8 +48,8 @@ export default async function AccountSettingsPage() {
       >
         <div>
           <SettingsRow
-            label="Email one-time code"
-            note="Enter the 6-digit code we email you — no password needed."
+            label="Email and password"
+            note="Sign in with the email address and password you used to create your account."
             value="Always available"
           />
         </div>

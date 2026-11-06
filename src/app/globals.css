@@ -194,6 +194,13 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1024px) {
+  html {
+    scroll-padding-bottom: 0;
+  }
 }
 
 body {
@@ -203,6 +210,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-feature-settings: "cv11", "ss01";
+  text-wrap: pretty;
 }
 
 /* Aligned digits for prices (₦ amounts) */

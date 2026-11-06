@@ -2,7 +2,7 @@
   "name": "pantaker",
   "version": "0.1.0",
   "private": true,
-  "description": "PANTAKER \u2014 Give unwanted things another chance. Circular economy marketplace landing page for Abuja, Nigeria.",
+  "description": "PANTAKER — Give unwanted things another chance. Circular economy marketplace landing page for Abuja, Nigeria.",
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/ensure-no-dev-server.mjs",
@@ -10,6 +10,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "prisma:generate": "prisma generate",
     "r2:check": "node scripts/check-r2.mjs",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
@@ -21,6 +22,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",
     "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "@bachs/sdk": "^2.0.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "class-variance-authority": "0.7.1",

@@ -33,7 +33,7 @@ export function AdminNav({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors duration-150",
+                "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors duration-150",
                 active
                   ? "bg-[var(--color-shop-violet)] text-[var(--color-pure-white)]"
                   : "bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)] hover:bg-[var(--color-primary-tint)]",

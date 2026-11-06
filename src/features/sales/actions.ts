@@ -133,8 +133,38 @@ export async function createSaleAction(
 
   let saleId: string;
   try {
-    const sale = await withUserContext(user, (tx) =>
-      tx.sale.create({
+    const sale = await withUserContext(user, async (tx) => {
+      await tx.$executeRaw`select pg_advisory_xact_lock(hashtext(${parsed.data.listing_id}))`;
+
+      const onlineOrder = await tx.order.findFirst({
+        where: {
+          listing_id: parsed.data.listing_id,
+          status: {
+            in: [
+              "pending_payment",
+              "held",
+              "ready_for_handover",
+              "handed_over",
+              "release_blocked",
+              "disputed",
+              "refund_pending",
+            ],
+          },
+        },
+        select: { id: true },
+      });
+      if (onlineOrder) throw new Error("ONLINE_ORDER_ACTIVE");
+
+      const activeSale = await tx.sale.findFirst({
+        where: {
+          listing_id: parsed.data.listing_id,
+          status: { in: [...ACTIVE_SALE_STATUSES] },
+        },
+        select: { id: true },
+      });
+      if (activeSale) throw new Error("SALE_ACTIVE");
+
+      return tx.sale.create({
         data: {
           listing_id: parsed.data.listing_id,
           seller_id: user.id,
@@ -146,15 +176,23 @@ export async function createSaleAction(
           status: "awaiting_confirmation",
         },
         select: { id: true },
-      }),
-    );
+      });
+    });
     saleId = sale.id;
   } catch (error) {
+    if (error instanceof Error && error.message === "ONLINE_ORDER_ACTIVE") {
+      return {
+        ok: false,
+        error:
+          "This listing has an online order in progress. Finish or cancel it first.",
+      };
+    }
     if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "P2002"
+      (error instanceof Error && error.message === "SALE_ACTIVE") ||
+      (typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P2002")
     ) {
       return {
         ok: false,

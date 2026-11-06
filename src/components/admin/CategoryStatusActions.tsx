@@ -7,7 +7,7 @@ import {
   setCategoryActiveAction,
   type CategoryActionResult,
 } from "@/features/admin/category-actions";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function formData(entries: Record<string, string>): FormData {
   const data = new FormData();
@@ -16,7 +16,7 @@ function formData(entries: Record<string, string>): FormData {
 }
 
 const secondaryButton =
-  "inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-[13px] font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)] disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-11 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-[13px] font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)] disabled:cursor-not-allowed disabled:opacity-40";
 
 export function CategoryStatusActions({
   id,
@@ -77,7 +77,7 @@ export function CategoryStatusActions({
         </button>
         <button
           type="button"
-          className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[var(--color-error)] bg-[var(--color-pure-white)] px-4 text-[13px] font-semibold text-[var(--color-error)] transition-colors duration-150 hover:bg-[var(--color-error-bg)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-11 cursor-pointer items-center justify-center rounded-full border border-[var(--color-error)] bg-[var(--color-pure-white)] px-4 text-[13px] font-semibold text-[var(--color-error)] transition-colors duration-150 hover:bg-[var(--color-error-bg)] disabled:cursor-not-allowed disabled:opacity-40"
           disabled={pending || blocked}
           onClick={() => setConfirmOpen(true)}
         >

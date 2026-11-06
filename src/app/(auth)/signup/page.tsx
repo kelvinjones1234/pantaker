@@ -1,13 +1,28 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { AuthCard } from "@/components/auth/AuthCard";
+import { SignupForm } from "@/components/auth/SignupForm";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
-/** Sign-up and sign-in are the same passwordless flow — funnel to /login. */
+export const metadata: Metadata = {
+  title: "Create account",
+  description: "Create a Pantaker account with your email and password.",
+};
+
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const next = safeRedirectPath(params.next ?? null, "/");
-  redirect(next && next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login");
+
+  return (
+    <AuthCard
+      eyebrow="Join Pantaker"
+      title="Create your account"
+      subtitle="Use your email and a password. We'll send a 6-digit code to confirm your address."
+    >
+      <SignupForm next={next} initialError={params.error} />
+    </AuthCard>
+  );
 }

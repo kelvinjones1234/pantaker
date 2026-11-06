@@ -3,7 +3,7 @@
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AdminActionMenu, type AdminActionMenuItem } from "@/components/admin/AdminActionMenu";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, fieldTextareaClass } from "@/components/ui/form-field";
 import { setListingStatusAction } from "@/features/admin/moderation-actions";
 import type { ModerationListingStatus } from "@/features/admin/moderation-rules";

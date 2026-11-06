@@ -25,6 +25,11 @@ const PREFERENCE_ROWS: Array<{
     label: "Listing review outcomes",
     note: "When a listing is approved, or needs changes before it can go live.",
   },
+  {
+    key: "order_updates",
+    label: "Order updates",
+    note: "Payment, handover, completion, refunds, and disputes on protected orders.",
+  },
 ];
 
 /**
@@ -41,6 +46,7 @@ export function NotificationPreferencesForm({
     messages: preferences.messages,
     sale_updates: preferences.sale_updates,
     listing_updates: preferences.listing_updates,
+    order_updates: preferences.order_updates,
   });
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ tone: "ok" | "error"; text: string } | null>(null);

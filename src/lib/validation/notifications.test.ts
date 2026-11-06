@@ -8,17 +8,32 @@ describe("notificationPreferencesSchema", () => {
       sale_updates: "on",
       listing_updates: "on",
     });
-    expect(parsed).toEqual({ messages: true, sale_updates: true, listing_updates: true });
+    expect(parsed).toEqual({
+      messages: true,
+      sale_updates: true,
+      listing_updates: true,
+      order_updates: false,
+    });
   });
 
   it("treats absent fields as off", () => {
     const parsed = notificationPreferencesSchema.parse({});
-    expect(parsed).toEqual({ messages: false, sale_updates: false, listing_updates: false });
+    expect(parsed).toEqual({
+      messages: false,
+      sale_updates: false,
+      listing_updates: false,
+      order_updates: false,
+    });
   });
 
   it("keeps a partial selection independent", () => {
     const parsed = notificationPreferencesSchema.parse({ messages: "on" });
-    expect(parsed).toEqual({ messages: true, sale_updates: false, listing_updates: false });
+    expect(parsed).toEqual({
+      messages: true,
+      sale_updates: false,
+      listing_updates: false,
+      order_updates: false,
+    });
   });
 
   it("rejects a non-checkbox truthy-looking value", () => {
@@ -31,7 +46,13 @@ describe("notificationPreferencesSchema", () => {
       messages: true,
       sale_updates: false,
       listing_updates: true,
+      order_updates: true,
     });
-    expect(parsed).toEqual({ messages: true, sale_updates: false, listing_updates: true });
+    expect(parsed).toEqual({
+      messages: true,
+      sale_updates: false,
+      listing_updates: true,
+      order_updates: true,
+    });
   });
 });

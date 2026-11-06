@@ -3,6 +3,7 @@ import {
   GearIcon,
   HelpIcon,
   KeyIcon,
+  ReceiptIcon,
   ShieldIcon,
   SlidersIcon,
   type BrandIconComponent,
@@ -15,13 +16,19 @@ export interface SettingsGroup {
   blurb: string;
 }
 
-/** The six settings groups. Order mirrors the task outline. */
+/** Settings groups. Order mirrors the task outline. */
 export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     href: "/seller/settings/account",
     label: "Account",
     icon: GearIcon,
     blurb: "Your email address and how you sign in.",
+  },
+  {
+    href: "/seller/settings/payments",
+    label: "Payments",
+    icon: ReceiptIcon,
+    blurb: "Bachs onboarding, buyer protection, and seller payouts.",
   },
   {
     href: "/seller/settings/notifications",

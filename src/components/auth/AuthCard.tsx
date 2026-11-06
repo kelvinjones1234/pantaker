@@ -16,7 +16,11 @@ export function AuthCard({
           {eyebrow}
         </p>
       )}
-      
+
+      <h1 className="font-brand-serif mt-2 text-2xl font-semibold tracking-tight text-[var(--color-ink-black)]">
+        {title}
+      </h1>
+
       {subtitle && (
         <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-muted-gray)]">
           {subtitle}

@@ -3,15 +3,17 @@
 A circular-economy marketplace for unwanted items, scrap, and recoverable
 materials. Launch market: **Abuja, FCT, Nigeria**.
 
-Pantaker is a Next.js app backed by PostgreSQL, Prisma, and NextAuth, with
-Cloudflare R2 for listing photos and avatars. Sales are recorded by the seller
-after an off-platform handover; Pantaker does not process payments or hold funds.
+Pantaker is a Next.js app backed by PostgreSQL, Prisma, NextAuth, and Cloudflare
+R2 for listing photos and avatars. Fixed-price listings can be bought with
+buyer-protected payments through Bachs: Pantaker holds the seller’s share
+until handover, then pays out after 72 hours (or sooner when the buyer confirms
+receipt). Sellers can still record off-platform sales directly.
 
 ## Quickstart
 
 ```bash
 npm install
-cp .env.example .env         # then fill in the values you need
+# fill in the values in .env, then start the app
 npm run dev                  # http://localhost:3000
 ```
 
@@ -54,6 +56,12 @@ the SQL-managed schema (`npm run prisma:generate`).
 | `0010_nextauth_identity.sql` | `public.users`, login OTPs, email changes, admin roles |
 | `0011_app_auth_context.sql` | Transaction-local auth context for app access |
 | `0012_lock_down_public_api.sql` | Revokes browser access; RLS stays enabled |
+| `0013_listing_area_index.sql` | Listing area index |
+| `0014_payments.sql` | Orders, payments, transfers, refunds, disputes, payouts |
+| `0015_password_auth.sql` | Password hashes and login OTPs |
+| `0016_seller_contact.sql` | Seller contact fields |
+| `0017_payment_completion.sql` | Order notifications and the order-update preference |
+| `0018_webhook_reconciliation.sql` | Dispute event ordering and transfer reconciliation indexes |
 
 Set `DATABASE_URL` (session pooler) and `DIRECT_URL` (direct host) for Prisma CLI
 commands. Database access is owner-level through Prisma; the browser never talks
@@ -157,6 +165,8 @@ Credentials live in the project-root `.env` file (gitignored). Key groups:
 
 - **Database:** `DATABASE_URL`, optional `DIRECT_URL` for CLI tooling.
 - **NextAuth:** `AUTH_SECRET`, `AUTH_URL`.
+- **Pickup codes:** `PICKUP_CODE_SECRET` (required in production; use a value
+  different from `AUTH_SECRET`. Local development falls back to `AUTH_SECRET`).
 - **Canonical URL:** `NEXT_PUBLIC_SITE_URL` (production must not be localhost).
 - **Support:** `NEXT_PUBLIC_SUPPORT_EMAIL` (shown on help/privacy pages; required
   in production).
@@ -168,19 +178,59 @@ Credentials live in the project-root `.env` file (gitignored). Key groups:
 - **Local images (development only):** `PANTAKER_IMAGE_MODE=local`,
   `LOCAL_UPLOAD_DIR`.
 - **Legacy images (optional):** `NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_HASH`.
+- **Payments (required in production):** `BACHS_SECRET_KEY`,
+  `BACHS_WEBHOOK_SECRET`, optional `BACHS_API_BASE_URL`.
+- **Scheduled jobs (required in production):** `CRON_SECRET`.
 
 Secrets are server-only and must never be prefixed with `NEXT_PUBLIC_`.
 
+## Payments (Bachs)
+
+Fixed-price listings use Bachs hosted checkout. The flow is:
+
+1. The buyer opens checkout. Pantaker creates an `orders` row and a pending
+   `order_payments` row, then a Bachs checkout session.
+2. `collection.succeeded` marks the order paid and holds the seller’s share.
+3. The seller marks the item ready, the buyer shows their pickup code, and the
+   seller confirms handover.
+4. The buyer confirms receipt, or 72 hours pass, then Pantaker creates a transfer
+   to the seller’s Bachs account. If the create response is `pending`, the cron
+   reconciles the transfer with Bachs before marking the order released.
+5. Refunds and disputes are recorded against the order. A lost dispute or a
+   refund is recovered from the seller’s balance where possible; recovery runs
+   from the cron so a slow Bachs call cannot block the webhook response.
+
+Webhook endpoint: `/api/webhooks/bachs`. Signature verification uses
+`BACHS_WEBHOOK_SECRET`; events are stored in `bachs_webhook_events` with the
+provider timestamp, and duplicate deliveries are ignored. In the Bachs dashboard
+the endpoint must use `event_source = all` (or `connect`) and subscribe to every
+handled family: `collection.*`, `checkout.expired`, `refund.*`, `dispute.*`,
+`transfer.created`, `payout.*`, and `account.updated` / `capability.updated`.
+Dispute events carry `created_at`; older deliveries are ignored so a late
+webhook cannot overwrite a newer resolution.
+
+### Scheduled jobs
+
+`/api/cron/orders` expires stale checkouts, releases seller transfers that are
+due, reconciles transfers that Bachs left `pending`, and starts recovery
+transfers for refunded orders. It requires `Authorization: Bearer $CRON_SECRET`. `vercel.json` schedules
+it every five minutes on Vercel; minute-level Vercel Cron needs a plan that
+allows it, so on Hobby or another host point any scheduler at the same endpoint
+with that header. Without a scheduler, stale checkouts stay open and seller
+payouts wait until a buyer confirms receipt.
+
 ## Authentication
 
-NextAuth handles identity with a **passwordless email one-time code**. There are
-no passwords. The code is a 6-digit number valid for 10 minutes. Sessions are
-JWTs and are invalidated when an account's `session_version` changes (for
-example, after an email change or suspension).
+NextAuth handles identity with **email + password**. Sign-up also verifies the
+address with a 6-digit one-time code valid for 10 minutes, then stores a scrypt
+password hash; sign-in uses only the email and password. Sessions are JWTs and
+are invalidated when an account's `session_version` changes (for example, after
+an email change or suspension).
 
 Routes:
 
-- `/login` — single sign-in / sign-up page.
+- `/login` — email + password sign-in.
+- `/signup` — create an account and confirm the email with a one-time code.
 - `/auth/signout` — POST sign-out.
 - `/seller/settings/account/confirm-email` — confirms a requested email change.
 
@@ -191,9 +241,13 @@ Email delivery uses SMTP (Gmail app passwords work). In production,
 
 - `/` — landing page and marketplace entry.
 - `/marketplace` — browse/search; `/marketplace/listing/[id]` — listing detail.
-- `/sell`, `/seller/*` — seller listings, messages, sales, settings.
-- `/admin/*` — listing moderation, reports, accounts, categories, deletion
-  requests, and admin roles (permission-gated; `noindex`).
+- `/sell`, `/seller/*` — seller listings, messages, sales, orders, settings.
+- `/checkout/[listing-id]`, `/orders`, `/orders/[id]` — protected checkout and
+  buyer orders.
+- `/admin/*` — listing moderation, reports, orders, accounts, categories,
+  deletion requests, and admin roles (permission-gated; `noindex`).
+- `/api/webhooks/bachs` — signed Bachs webhooks; `/api/cron/orders` — expiry,
+  payout retries, transfer reconciliation, and refund recovery.
 - `/help`, `/privacy`, `/terms` — public support, privacy notice, and marketplace
   rules.
 

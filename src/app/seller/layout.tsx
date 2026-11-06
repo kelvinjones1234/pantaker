@@ -6,7 +6,7 @@ import { getUnreadNotificationCount } from "@/features/notifications/queries";
 import { Logo } from "@/components/brand/Logo";
 import { SellerSidebar } from "@/components/seller/SellerSidebar";
 import { SellerMobileNav } from "@/components/seller/SellerMobileNav";
-import { BellIcon, PlusIcon, ShieldIcon } from "@/components/brand/icons";
+import { BellIcon, LogoutIcon, ShieldIcon } from "@/components/brand/icons";
 import { isAdminUser } from "@/features/admin/roles";
 
 /**
@@ -49,7 +49,7 @@ export default async function SellerLayout({
                 <Link
                   href="/admin"
                   aria-label="Open admin"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
                 >
                   <ShieldIcon className="h-4 w-4" />
                 </Link>
@@ -61,26 +61,30 @@ export default async function SellerLayout({
                     ? `Notifications, ${unreadNotifications} unread`
                     : "Notifications"
                 }
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+                className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
               >
                 <BellIcon className="h-4 w-4" />
                 {unreadNotifications > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-1 text-[10px] font-semibold text-[var(--color-pure-white)]">
-                    {unreadNotifications}
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
                   </span>
                 )}
               </Link>
-              <Link
-                href="/sell"
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[var(--color-shop-violet)] px-4 text-xs font-semibold text-[var(--color-pure-white)] transition-colors duration-150 hover:bg-[var(--color-primary-hover)]"
-              >
-                <PlusIcon className="h-3.5 w-3.5" />
-                List an item
-              </Link>
+              <form action="/auth/signout" method="post" className="shrink-0">
+                <button
+                  type="submit"
+                  aria-label="Sign out"
+                  title="Sign out"
+                  className="inline-flex h-11 w-11 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--color-canvas-mist)] text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)] sm:w-auto sm:px-4"
+                >
+                  <LogoutIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </button>
+              </form>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pb-12 lg:pt-8">
+          <main className="flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 lg:pb-12 lg:pt-8">
             {accountStatus === "restricted" && (
               <div
                 role="status"

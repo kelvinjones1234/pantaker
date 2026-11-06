@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { uploadLimits } from "@/config/site";
+import { normalizeHandle, SOCIAL_PLATFORMS, type SocialPlatform } from "@/lib/contact";
 import {
   isLegacyImageId,
   isSafeObjectKey,
@@ -110,6 +111,30 @@ export const reportSchema = z.object({
 
 export const accountTypeSchema = z.enum(["individual", "business"]);
 
+function socialHandleSchema(platform: SocialPlatform) {
+  return z.preprocess(
+    (value) => normalizeHandle(typeof value === "string" ? value : null),
+    z
+      .string()
+      .max(
+        platform.maxLength,
+        `${platform.label} handles are at most ${platform.maxLength} characters.`,
+      )
+      .regex(
+        platform.pattern,
+        `Enter your ${platform.label} handle without the @ or a full URL.`,
+      )
+      .nullable(),
+  );
+}
+
+const CONTACT_PLATFORMS = Object.fromEntries(
+  SOCIAL_PLATFORMS.map((platform) => [
+    platform.field,
+    socialHandleSchema(platform),
+  ]),
+) as Record<SocialPlatform["field"], ReturnType<typeof socialHandleSchema>>;
+
 export const profileSchema = z.object({
   display_name: z.string().trim().min(2, "Add a display name (min 2 characters).").max(80),
   username: z
@@ -124,7 +149,24 @@ export const profileSchema = z.object({
   city: z.string().trim().max(80).nullable().optional(),
   area: z.string().trim().max(120).nullable().optional(),
   bio: z.string().trim().max(500).nullable().optional(),
-});
+  phone: z
+    .string()
+    .trim()
+    .max(32, "Keep the phone number under 32 characters.")
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
+  phone_is_whatsapp: z
+    .preprocess(
+      (value) => value === true || value === "true" || value === "on",
+      z.boolean(),
+    )
+    .default(false),
+  ...CONTACT_PLATFORMS,
+}).transform((data) => ({
+  ...data,
+  phone_is_whatsapp: data.phone ? data.phone_is_whatsapp : false,
+}));
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 

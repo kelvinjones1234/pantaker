@@ -14,6 +14,12 @@ export const metadata: Metadata = {
 export default async function PrivacySettingsPage() {
   await requireSeller("/seller/settings/privacy");
   const profile = await getProfile();
+  const hasSocials = Boolean(
+    profile?.instagram_handle ||
+      profile?.x_handle ||
+      profile?.facebook_handle ||
+      profile?.tiktok_handle,
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -38,6 +44,19 @@ export default async function PrivacySettingsPage() {
             value={profile?.area || profile?.city || "Not set"}
           />
           <SettingsRow label="Bio" value={profile?.bio?.trim() ? "Shown" : "Not set"} />
+          <SettingsRow
+            label="Phone"
+            value={profile?.phone?.trim() ? "Shown" : "Not set"}
+          />
+          <SettingsRow
+            label="WhatsApp"
+            value={
+              profile?.phone?.trim() && profile.phone_is_whatsapp
+                ? "Shown"
+                : "Not set"
+            }
+          />
+          <SettingsRow label="Social links" value={hasSocials ? "Shown" : "Not set"} />
         </div>
         <div className="mt-4">
           <Link
@@ -52,11 +71,12 @@ export default async function PrivacySettingsPage() {
 
       <SettingsCard
         title="Contact details"
-        description="Pantaker doesn't collect a phone number, WhatsApp handle, or public email for sellers."
+        description="Optional contact details you add to your profile are shown on your published listings."
       >
         <p className="text-[13px] leading-relaxed text-[var(--color-ink-black)]">
-          Buyers reach you by sending an enquiry about a listing. Your sign-in email is never shown
-          to buyers and there is no contact field to turn on or off.
+          Buyers can call the phone number you add, open WhatsApp when you mark the number as on
+          WhatsApp, and visit any social handles you link. Leave a field blank to hide it. Your
+          sign-in email is never shown to buyers.
         </p>
       </SettingsCard>
 

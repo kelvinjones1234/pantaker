@@ -88,7 +88,7 @@ export function MessageThread({
   }, [conversationId, messages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
+    bottomRef.current?.scrollIntoView({ block: "nearest" });
   }, [messages.length]);
 
   const ordered = useMemo(
@@ -126,7 +126,7 @@ export function MessageThread({
   };
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div
         className="flex-1 overflow-y-auto px-1 py-4"
         role="log"
@@ -194,7 +194,7 @@ export function MessageThread({
             rows={1}
             maxLength={2000}
             placeholder={`Message ${otherName}…`}
-            className="max-h-32 min-h-11 min-w-0 flex-1 resize-y rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 py-3 text-[13px] leading-relaxed text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+            className="max-h-32 min-h-11 min-w-0 flex-1 resize-y rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 py-3 text-base leading-relaxed text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] sm:text-[13px]"
           />
           <button
             type="submit"

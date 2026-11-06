@@ -8,14 +8,17 @@ import {
   useState,
   useTransition,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { requestEmailCodeAction } from "@/features/auth/actions";
+import { requestSignupCodeAction } from "@/features/auth/actions";
 import { initialAuthState } from "@/features/auth/types";
-import { AlertIcon, MailIcon } from "@/components/auth/icons";
-
-const inputClass =
-  "h-[52px] w-full max-w-[352px] sm:w-[352px] rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-gray)] focus:border-[var(--color-muted-gray)]";
+import {
+  authButtonClass,
+  authInputClass,
+  FieldError,
+  FormAlert,
+} from "@/components/auth/form-ui";
 
 const RESEND_SECONDS = 60;
 
@@ -23,29 +26,7 @@ function emptyCode() {
   return Array.from({ length: 6 }, () => "");
 }
 
-function FieldError({ id, messages }: { id: string; messages?: string[] }) {
-  if (!messages?.length) return null;
-  return (
-    <p
-      id={id}
-      role="alert"
-      className="mt-1.5 text-xs text-[var(--color-error)]"
-    >
-      {messages[0]}
-    </p>
-  );
-}
-
-function FormAlert({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex items-start gap-2 rounded-2xl bg-[var(--color-error-bg)] px-4 py-3 text-xs text-[var(--color-error)]">
-      <AlertIcon className="mt-px h-4 w-4 shrink-0" />
-      <span>{children}</span>
-    </div>
-  );
-}
-
-export function AuthForm({
+export function SignupForm({
   next,
   initialError,
 }: {
@@ -53,8 +34,11 @@ export function AuthForm({
   initialError?: string;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [step, setStep] = useState<"details" | "code">("details");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [isVerifying, startVerify] = useTransition();
@@ -63,7 +47,7 @@ export function AuthForm({
   const codeId = useId();
 
   const [reqState, requestCode, isRequesting] = useActionState(
-    requestEmailCodeAction,
+    requestSignupCodeAction,
     initialAuthState,
   );
 
@@ -86,6 +70,8 @@ export function AuthForm({
     if (cooldown > 0 || isRequesting) return;
     const data = new FormData();
     data.set("email", email);
+    data.set("password", password);
+    data.set("confirmPassword", confirmPassword);
     requestCode(data);
     setCooldown(RESEND_SECONDS);
   };
@@ -214,6 +200,9 @@ export function AuthForm({
     });
   };
 
+  const loginHref =
+    next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login";
+
   if (step === "code") {
     return (
       <div className="flex w-full max-w-[352px] flex-col gap-4 sm:w-[352px]">
@@ -226,13 +215,18 @@ export function AuthForm({
             <span className="font-medium text-[var(--color-ink-black)]">
               {email}
             </span>
-            .
+            . Enter it to finish creating your account.
           </p>
         </div>
 
-        {reqState.status === "error" && reqState.message && (
-          <FormAlert>{reqState.message}</FormAlert>
-        )}
+        {reqState.status === "error" &&
+          (reqState.message || reqState.errors) && (
+            <FormAlert>
+              {reqState.message ??
+                Object.values(reqState.errors ?? {})[0]?.[0] ??
+                "We couldn't send a new code. Please try again."}
+            </FormAlert>
+          )}
         {verifyError && <FormAlert>{verifyError}</FormAlert>}
 
         <form onSubmit={verifyCode} noValidate className="flex flex-col gap-4">
@@ -278,11 +272,7 @@ export function AuthForm({
             )}
           </fieldset>
 
-          <button
-            type="submit"
-            disabled={isVerifying}
-            className="inline-flex h-[52px] w-full max-w-[352px] sm:w-[352px] cursor-pointer items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-5 text-sm font-semibold text-[var(--color-pure-white)] transition-colors duration-200 hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
-          >
+          <button type="submit" disabled={isVerifying} className={authButtonClass}>
             {isVerifying ? "Verifying…" : "Verify & continue"}
           </button>
         </form>
@@ -291,7 +281,7 @@ export function AuthForm({
           <button
             type="button"
             onClick={() => {
-              setStep("email");
+              setStep("details");
               setVerifyError(null);
               setCode(emptyCode());
             }}
@@ -344,22 +334,84 @@ export function AuthForm({
             aria-describedby={
               reqState.errors?.email ? "email-error" : undefined
             }
-            className={inputClass}
+            className={authInputClass}
           />
           <FieldError id="email-error" messages={reqState.errors?.email} />
         </div>
 
-        <button
-          type="submit"
-          disabled={isRequesting}
-          className="mt-1 inline-flex h-[52px] w-full max-w-[352px] sm:w-[352px] cursor-pointer items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-5 text-sm font-semibold text-[var(--color-pure-white)] transition-colors duration-200 hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
-        >
-          {isRequesting ? "Sending code…" : "Email me a code"}
+        <div>
+          <label htmlFor="password" className="sr-only">
+            Password
+          </label>
+          <div className="relative w-full max-w-[352px] sm:w-[352px]">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Create a password (8+ characters)"
+              aria-invalid={Boolean(reqState.errors?.password)}
+              aria-describedby={
+                reqState.errors?.password ? "password-error" : undefined
+              }
+              className={`${authInputClass} pr-16`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute inset-y-0 right-4 cursor-pointer text-xs font-medium text-[var(--color-muted-gray)] transition-colors duration-150 hover:text-[var(--color-ink-black)]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <FieldError id="password-error" messages={reqState.errors?.password} />
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="sr-only">
+            Confirm password
+          </label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            placeholder="Confirm your password"
+            aria-invalid={Boolean(reqState.errors?.confirmPassword)}
+            aria-describedby={
+              reqState.errors?.confirmPassword ? "confirm-password-error" : undefined
+            }
+            className={authInputClass}
+          />
+          <FieldError
+            id="confirm-password-error"
+            messages={reqState.errors?.confirmPassword}
+          />
+        </div>
+
+        <button type="submit" disabled={isRequesting} className={`mt-1 ${authButtonClass}`}>
+          {isRequesting ? "Sending code…" : "Create account"}
         </button>
       </form>
 
       <p className="text-center text-xs text-[var(--color-muted-gray)]">
-        No password needed — we&rsquo;ll email you a one-time code.
+        We&rsquo;ll email a 6-digit code to confirm your address. Already have
+        an account?{" "}
+        <Link
+          href={loginHref}
+          className="cursor-pointer font-medium text-[var(--color-shop-violet)] hover:underline"
+        >
+          Sign in
+        </Link>
       </p>
     </div>
   );

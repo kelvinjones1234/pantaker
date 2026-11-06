@@ -7,6 +7,10 @@ import { canEdit } from "@/features/listings/lifecycle";
 import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { SellerPageHeader } from "@/components/seller/SellerPageHeader";
 import { ListingForm } from "@/components/seller/ListingForm";
+import {
+  getSellerPaymentAccount,
+  sellerCanReceivePayments,
+} from "@/features/payments/seller-accounts";
 
 export const metadata: Metadata = {
   title: "Edit listing — Pantaker",
@@ -17,7 +21,7 @@ export default async function EditListingPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireSeller("/seller/listings");
+  const user = await requireSeller("/seller/listings");
 
   const { id } = await params;
   // getSellerListing is scoped to the session, so another seller's id resolves
@@ -26,7 +30,10 @@ export default async function EditListingPage({
   if (!listing) notFound();
   if (!canEdit(listing.item_status)) redirect("/seller/listings");
 
-  const categories = await getCategories();
+  const [categories, paymentAccount] = await Promise.all([
+    getCategories(),
+    user ? getSellerPaymentAccount(user.id) : Promise.resolve(null),
+  ]);
 
   const images = (listing.listing_images ?? [])
     .slice()
@@ -52,6 +59,7 @@ export default async function EditListingPage({
         categories={categories}
         isLive
         imageUploadsConfigured={isImageStorageConfigured()}
+        onlinePaymentsActive={sellerCanReceivePayments(paymentAccount)}
         initial={{
           title: listing.title,
           description: listing.description,

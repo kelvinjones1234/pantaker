@@ -21,15 +21,15 @@ export default async function NotificationsPage() {
       <div className="flex flex-wrap items-center gap-4 text-[12px] font-semibold">
         <Link
           href="/marketplace"
-          className="text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
+          className="inline-flex min-h-11 items-center text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
         >
           ← Marketplace
         </Link>
         <Link
           href="/seller"
-          className="text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
+          className="inline-flex min-h-11 items-center text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
         >
-          Seller Centre
+          Dashboard
         </Link>
       </div>
 

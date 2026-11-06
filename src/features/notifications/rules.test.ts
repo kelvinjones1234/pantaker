@@ -6,6 +6,7 @@ import {
   isNotificationType,
   isUnread,
   messageDedupeKey,
+  orderDedupeKey,
   preferenceKeyForType,
   saleDedupeKey,
   sortByNewest,
@@ -44,6 +45,8 @@ describe("notification types", () => {
     expect(preferenceKeyForType("sale_status_changed")).toBe("sale_updates");
     expect(preferenceKeyForType("listing_published")).toBe("listing_updates");
     expect(preferenceKeyForType("listing_rejected")).toBe("listing_updates");
+    expect(preferenceKeyForType("order_paid")).toBe("order_updates");
+    expect(preferenceKeyForType("order_refunded")).toBe("order_updates");
     expect(preferenceKeyForType("account_email_change")).toBeNull();
   });
 
@@ -100,5 +103,10 @@ describe("dedupe keys mirror the SQL", () => {
   it("keys a sale on sale id and status", () => {
     expect(saleDedupeKey("s-1", "reserved")).toBe("sale:s-1:reserved");
     expect(saleDedupeKey("s-1", "completed")).not.toBe(saleDedupeKey("s-1", "reserved"));
+  });
+
+  it("keys an order on order id and event", () => {
+    expect(orderDedupeKey("o-1", "paid")).toBe("order:o-1:paid");
+    expect(orderDedupeKey("o-1", "refunded")).not.toBe(orderDedupeKey("o-1", "paid"));
   });
 });

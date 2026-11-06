@@ -27,7 +27,7 @@ export function AdminPagination({
   if (total === 0) return null;
 
   const base =
-    "flex h-9 min-w-9 items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors duration-150";
+    "flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors duration-150 sm:h-9 sm:min-w-9";
   const idle =
     "border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-ink-black)] hover:border-[var(--color-ink-30)]";
 

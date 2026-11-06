@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
 } from "react";
 import Image from "next/image";
 import { StorageImage } from "@/components/ui/storage-image";
@@ -42,8 +43,10 @@ import {
   QuickNavRail,
 } from "@/components/marketplace/QuickNavRail";
 import { ConditionBadge } from "@/components/ui/badge";
+import { FieldSelect } from "@/components/ui/form-field";
 import { pricingLabel, timeAgo } from "@/lib/utils";
-import { ABUJA_AREAS } from "@/lib/areas";
+import { ABUJA_AREAS, ALL_ABUJA, parseArea, withArea } from "@/lib/areas";
+import { saveAreaPreference } from "@/features/location/client";
 import type { CardListing } from "@/components/marketplace/ListingCard";
 
 interface ShopLandingPageProps {
@@ -51,6 +54,9 @@ interface ShopLandingPageProps {
   categories: { name: string; slug: string }[];
   isLive: boolean;
   user?: { id: string; email?: string } | null;
+  initialArea: string;
+  areaCounts: Record<string, number>;
+  categoryCounts: Record<string, number>;
 }
 
 /** Circular chip tones for department icons (neutral + violet set, no green). */
@@ -145,14 +151,14 @@ interface DistrictPickerProps {
   selectedArea: string;
   onSelectArea: (area: string) => void;
   areaCounts: Record<string, number>;
-  onAreaPicked?: () => void;
+  pending?: boolean;
 }
 
 function DistrictPicker({
   selectedArea,
   onSelectArea,
   areaCounts,
-  onAreaPicked,
+  pending = false,
 }: DistrictPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -172,11 +178,8 @@ function DistrictPicker({
     );
   }, [search]);
 
-  const isFiltered = selectedArea !== "All Abuja";
-  const totalListings = useMemo(
-    () => Object.values(areaCounts).reduce((sum, n) => sum + n, 0),
-    [areaCounts],
-  );
+  const isFiltered = selectedArea !== ALL_ABUJA;
+  const totalListings = areaCounts[ALL_ABUJA] ?? 0;
 
   const closeAndRefocusTrigger = () => {
     setIsOpen(false);
@@ -186,7 +189,6 @@ function DistrictPicker({
   const pickArea = (name: string) => {
     onSelectArea(name);
     setIsOpen(false);
-    onAreaPicked?.();
     triggerRef.current?.focus();
   };
 
@@ -319,6 +321,8 @@ function DistrictPicker({
       <button
         ref={triggerRef}
         type="button"
+        disabled={pending}
+        aria-busy={pending}
         onClick={() => setIsOpen((v) => !v)}
         onKeyDown={(e) => {
           if (
@@ -333,7 +337,7 @@ function DistrictPicker({
         aria-haspopup="listbox"
         aria-controls={listboxId}
         aria-label={`Select district: currently ${selectedArea}`}
-        className={`inline-flex h-[52px] cursor-pointer items-center gap-1.5 rounded-full border bg-[var(--color-pure-white)] px-3.5 sm:px-4 text-xs outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:outline-none focus-visible:outline-none focus-visible:border-[var(--color-shop-violet)] ${
+        className={`inline-flex h-[52px] cursor-pointer items-center gap-1.5 rounded-full border bg-[var(--color-pure-white)] px-3.5 text-xs outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:outline-none focus-visible:outline-none focus-visible:border-[var(--color-shop-violet)] disabled:cursor-wait sm:px-4 ${
           isOpen || isFiltered
             ? "border-[var(--color-shop-violet)]"
             : "border-[var(--color-faint-border)]"
@@ -354,12 +358,19 @@ function DistrictPicker({
             aria-hidden="true"
           />
         )}
-        <ChevronDownIcon
-          className={`h-3.5 w-3.5 text-[var(--color-muted-gray)] transition-transform duration-200 shrink-0 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          aria-hidden="true"
-        />
+        {pending ? (
+          <span
+            className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--color-muted-gray)] border-t-transparent"
+            aria-hidden="true"
+          />
+        ) : (
+          <ChevronDownIcon
+            className={`h-3.5 w-3.5 shrink-0 text-[var(--color-muted-gray)] transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+            aria-hidden="true"
+          />
+        )}
       </button>
 
       {isOpen && (
@@ -432,7 +443,7 @@ function DistrictPicker({
               autoCapitalize="none"
               spellCheck={false}
               enterKeyHint="search"
-              className="h-9 w-full rounded-full border border-[var(--color-ink-10)] bg-[var(--color-canvas-mist)] py-2 pl-9 pr-9 text-[13px] tracking-[-0.015em] text-[var(--color-ink-black)] outline-none focus:outline-none focus-visible:outline-none shadow-none focus:shadow-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)] focus:bg-[var(--color-pure-white)]"
+              className="h-11 w-full rounded-full border border-[var(--color-ink-10)] bg-[var(--color-canvas-mist)] py-2 pl-9 pr-9 text-base tracking-[-0.015em] text-[var(--color-ink-black)] outline-none focus:outline-none focus-visible:outline-none shadow-none focus:shadow-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)] focus:bg-[var(--color-pure-white)] sm:h-9 sm:text-[13px]"
             />
             {search && (
               <button
@@ -529,11 +540,13 @@ export function ShopLandingPage({
   categories,
   isLive,
   user,
+  initialArea,
+  areaCounts,
+  categoryCounts,
 }: ShopLandingPageProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedArea, setSelectedArea] = useState("All Abuja");
   const [activeTab, setActiveTab] = useState<
     "all" | "scrap" | "usable" | "budget" | "free"
   >("all");
@@ -541,16 +554,23 @@ export function ShopLandingPage({
     "newest",
   );
   const [featureIndex, setFeatureIndex] = useState(0);
+  const [isAreaPending, startAreaTransition] = useTransition();
 
-  const areaCounts = useMemo(() => {
-    const map: Record<string, number> = { "All Abuja": initialItems.length };
-    for (const item of initialItems) {
-      if (item.area) {
-        map[item.area] = (map[item.area] ?? 0) + 1;
-      }
-    }
-    return map;
-  }, [initialItems]);
+  const selectedArea = initialArea;
+  const areaLabel = selectedArea === ALL_ABUJA ? "Abuja" : selectedArea;
+
+  useEffect(() => {
+    setFeatureIndex(0);
+  }, [initialArea]);
+
+  const handleSelectArea = (area: string) => {
+    const next = parseArea(area) ?? ALL_ABUJA;
+    if (next === initialArea) return;
+    saveAreaPreference(next);
+    startAreaTransition(() => {
+      router.push(withArea("/", next), { scroll: false });
+    });
+  };
 
   const categoryName = (slug: string) =>
     categories.find((c) => c.slug.toLowerCase() === slug.toLowerCase())?.name ??
@@ -589,9 +609,6 @@ export function ShopLandingPage({
       result = result.filter(
         (item) => item.category?.toLowerCase() === name.toLowerCase(),
       );
-    }
-    if (selectedArea !== "All Abuja") {
-      result = result.filter((item) => item.area === selectedArea);
     }
     if (activeTab === "scrap") {
       result = result.filter(
@@ -632,7 +649,6 @@ export function ShopLandingPage({
     initialItems,
     searchQuery,
     selectedCategory,
-    selectedArea,
     activeTab,
     sortBy,
     categories,
@@ -644,11 +660,7 @@ export function ShopLandingPage({
     featured.length > 0 ? featured[featureIndex % featured.length] : null;
   const curated = initialItems.slice(0, 4);
 
-  const countForSlug = (slug: string) => {
-    const name = categoryName(slug).toLowerCase();
-    return initialItems.filter((i) => i.category?.toLowerCase() === name)
-      .length;
-  };
+  const countForSlug = (slug: string) => categoryCounts[slug] ?? 0;
 
   const departmentsRef = useRef<HTMLElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -713,7 +725,9 @@ export function ShopLandingPage({
   };
 
   const pickDepartment = (slug: string) => {
-    router.push(slug ? `/marketplace/${slug}` : "/marketplace");
+    router.push(
+      withArea(slug ? `/marketplace/${slug}` : "/marketplace", selectedArea),
+    );
   };
 
   return (
@@ -798,7 +812,7 @@ export function ShopLandingPage({
       </MobileQuickNav>
 
       {/* MAIN VIEWPORT */}
-      <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 md:pl-24 md:pr-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 lg:pl-24 lg:pr-8">
         {/* 2. TOP HEADER */}
         <header className="relative mb-8 flex w-full flex-col items-center">
           {/* Top bar: Brand logo, search pill, Abuja district picker */}
@@ -813,63 +827,66 @@ export function ShopLandingPage({
                 aria-label="Pantaker home"
                 className="flex items-center"
               >
-                <Logo />
+                <Logo compact className="sm:hidden" />
+                <Logo className="hidden sm:inline-flex" />
               </Link>
-              <div className="sm:hidden">
+              <div className="flex items-center gap-1 sm:hidden">
                 <DistrictPicker
                   selectedArea={selectedArea}
-                  onSelectArea={setSelectedArea}
+                  onSelectArea={handleSelectArea}
                   areaCounts={areaCounts}
-                  onAreaPicked={() => scrollToId("feed")}
+                  pending={isAreaPending}
                 />
               </div>
             </div>
-            <form
-              role="search"
-              onSubmit={handleSearchSubmit}
-              className="flex h-[64px] w-full max-w-[352px] items-center gap-3 rounded-full border border-[var(--color-ink-10)] bg-[var(--color-pure-white)] pl-5 pr-2 transition-all focus-within:border-[var(--color-muted-gray)] sm:mx-auto sm:w-[352px]"
-            >
-              <SearchIcon
-                className="h-5 w-5 shrink-0 select-none text-[var(--color-muted-gray)]"
-                aria-hidden="true"
-              />
-              <label htmlFor="main-search" className="sr-only">
-                Search listings
-              </label>
-              <input
-                id="main-search"
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="What are you shopping for today?"
-                autoComplete="off"
-                className="h-full w-full flex-1 border-0 bg-transparent p-0 text-[15px] sm:text-[16px] text-[var(--color-ink-black)] tracking-[-0.031em] outline-none placeholder:text-[var(--color-muted-gray)] focus-visible:outline-none"
-              />
-              {searchQuery && (
+            <div className="flex w-full items-center justify-center gap-3 sm:w-auto sm:justify-start">
+              <form
+                role="search"
+                onSubmit={handleSearchSubmit}
+                className="flex h-[64px] w-full max-w-[352px] items-center gap-3 rounded-full border border-[var(--color-ink-10)] bg-[var(--color-pure-white)] pl-5 pr-2 transition-all focus-within:border-[var(--color-muted-gray)] sm:mx-auto sm:w-[352px]"
+              >
+                <SearchIcon
+                  className="h-5 w-5 shrink-0 select-none text-[var(--color-muted-gray)]"
+                  aria-hidden="true"
+                />
+                <label htmlFor="main-search" className="sr-only">
+                  Search listings
+                </label>
+                <input
+                  id="main-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="What are you shopping for today?"
+                  autoComplete="off"
+                  className="h-full w-full flex-1 border-0 bg-transparent p-0 text-base text-[var(--color-ink-black)] tracking-[-0.031em] outline-none placeholder:text-[var(--color-muted-gray)] focus-visible:outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="rounded-full p-1 text-[var(--color-muted-gray)] hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                  className="rounded-full p-1 text-[var(--color-muted-gray)] hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]"
+                  onClick={handlePlusClick}
+                  aria-label="Post a listing"
+                  className="flex h-[48px] w-[48px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-[var(--color-pure-white)] outline-none transition hover:opacity-95 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-shop-violet)]"
                 >
-                  <XIcon className="h-4 w-4" />
+                  <PlusIcon className="h-5 w-5" aria-hidden="true" />
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={handlePlusClick}
-                aria-label="Post a listing"
-                className="flex h-[48px] w-[48px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-[var(--color-pure-white)] outline-none transition hover:opacity-95 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-shop-violet)]"
-              >
-                <PlusIcon className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </form>
+              </form>
+            </div>
             <div className="hidden items-center gap-2 sm:flex">
               <DistrictPicker
                 selectedArea={selectedArea}
-                onSelectArea={setSelectedArea}
+                onSelectArea={handleSelectArea}
                 areaCounts={areaCounts}
-                onAreaPicked={() => scrollToId("feed")}
+                pending={isAreaPending}
               />
             </div>
           </div>
@@ -936,7 +953,7 @@ export function ShopLandingPage({
                   scrollToId("feed");
                 }}
                 aria-label="Clear department filter"
-                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-muted-gray)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] hover:text-[var(--color-ink-black)] focus:outline-none focus-visible:outline-none focus-visible:border-[var(--color-shop-violet)]"
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-muted-gray)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] hover:text-[var(--color-ink-black)] focus:outline-none focus-visible:outline-none focus-visible:border-[var(--color-shop-violet)]"
               >
                 <GridIcon className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -947,6 +964,52 @@ export function ShopLandingPage({
             </div>
           </nav>
         </header>
+
+        {!activeFeature && (
+          <section
+            aria-labelledby="area-empty-heading"
+            className="shop-card flex flex-col items-center p-8 text-center sm:p-12"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary-tint)] text-[var(--color-shop-violet)]">
+              <MapPinIcon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2
+              id="area-empty-heading"
+              className="font-brand-serif mt-4 text-2xl font-semibold tracking-tight text-[var(--color-ink-black)] sm:text-3xl"
+            >
+              {selectedArea === ALL_ABUJA
+                ? "No listings yet"
+                : `Nothing in ${selectedArea} yet`}
+            </h2>
+            <p className="mt-2 max-w-md text-[13px] leading-relaxed text-[var(--color-muted-gray)]">
+              {selectedArea === ALL_ABUJA
+                ? "New recoverable items will appear here as soon as they are listed."
+                : `No recoverable items have been posted in ${selectedArea} yet. Be the first, or browse everything in Abuja.`}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {selectedArea !== ALL_ABUJA && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                    setActiveTab("all");
+                    handleSelectArea(ALL_ABUJA);
+                  }}
+                  className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 py-2.5 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-black)]"
+                >
+                  Show all Abuja
+                </button>
+              )}
+              <Link
+                href={user ? "/sell" : "/login?next=/sell"}
+                className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-shop-violet)] px-5 py-2.5 text-xs font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-95"
+              >
+                List an item
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* 3. HERO SHOWCASE BANNER */}
         {activeFeature && (
@@ -991,7 +1054,7 @@ export function ShopLandingPage({
                       activeFeature.pricing_type,
                       activeFeature.price,
                     )}
-                    <span className="ml-2 text-sm text-[var(--ink-on-dark-70)]">
+                    <span className="ml-2 text-sm text-[var(--ink-on-dark-90)]">
                       {activeFeature.area
                         ? `${activeFeature.area}, Abuja`
                         : activeFeature.city}
@@ -1001,7 +1064,7 @@ export function ShopLandingPage({
                 <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href={`/marketplace/listing/${activeFeature.id}`}
-                    className="rounded-full bg-[var(--color-shop-violet)] px-6 py-2.5 text-[13px] font-semibold tracking-tight text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90"
+                    className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-shop-violet)] px-6 py-2.5 text-[13px] font-semibold tracking-tight text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90"
                   >
                     View listing
                   </Link>
@@ -1015,7 +1078,7 @@ export function ShopLandingPage({
                       );
                       pickDepartment(match ? match.slug : "");
                     }}
-                    className="rounded-full border border-[var(--overlay-paper-border-10)] bg-[var(--overlay-ink-40)] px-6 py-2.5 text-[13px] font-medium tracking-tight text-[var(--color-pure-white)] backdrop-blur-md transition-all hover:bg-[var(--overlay-ink-55)]"
+                    className="inline-flex min-h-11 items-center rounded-full border border-[var(--overlay-paper-border-10)] bg-[var(--overlay-ink-40)] px-6 py-2.5 text-[13px] font-medium tracking-tight text-[var(--color-pure-white)] backdrop-blur-md transition-all hover:bg-[var(--overlay-ink-55)]"
                   >
                     Shop similar
                   </button>
@@ -1095,8 +1158,8 @@ export function ShopLandingPage({
                 aria-hidden="true"
               />
             </button>
-            <span className="text-xs text-[var(--color-muted-gray)]">
-              {isLive ? "Live counts" : "Preview counts"} · Abuja
+            <span className="text-xs text-[var(--color-ash-veil)]">
+              {isLive ? "Live counts" : "Preview counts"} · {areaLabel}
             </span>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -1127,8 +1190,8 @@ export function ShopLandingPage({
                     <span className="font-brand-serif block text-3xl font-semibold tracking-tight">
                       {yard.title.split(" ")[0]}
                     </span>
-                    <span className="mt-1 flex items-center gap-2 text-xs text-[var(--ink-on-dark-90)]">
-                      <span>
+                    <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--overlay-paper-90)] px-2.5 py-1 text-xs font-medium text-[var(--color-ink-black)] backdrop-blur-md">
+                      <span className="shrink-0">
                         {n} {n === 1 ? "listing" : "listings"}
                       </span>
                       <span aria-hidden="true">•</span>
@@ -1154,15 +1217,17 @@ export function ShopLandingPage({
               >
                 Curated for you
               </h2>
-              <p className="mt-0.5 text-[13px] text-[var(--color-muted-gray)]">
+              <p className="mt-0.5 text-[13px] text-[var(--color-ash-veil)]">
                 {isLive
-                  ? "Fresh picks from Abuja sellers"
+                  ? `Fresh picks from ${areaLabel} sellers`
                   : "Sample picks — connect the database for the live feed"}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => router.push("/marketplace")}
+              onClick={() =>
+                router.push(withArea("/marketplace", selectedArea))
+              }
               className="text-[13px] font-medium text-[var(--color-shop-violet)] hover:underline"
             >
               View all
@@ -1211,9 +1276,9 @@ export function ShopLandingPage({
                       </span>
                     </div>
                     <div className="px-1.5 pb-1 pt-2.5">
-                      <h4 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
+                      <h3 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
                         {item.title}
-                      </h4>
+                      </h3>
                       <div className="mt-1.5 flex items-center justify-between">
                         <span className="font-sans tabular text-[14px] font-semibold tracking-tight text-[var(--color-ink-black)]">
                           {pricingLabel(item.pricing_type, item.price)}
@@ -1245,18 +1310,22 @@ export function ShopLandingPage({
                 id="feed-heading"
                 className="font-brand-serif text-[22px] sm:text-[24px] font-semibold tracking-tight text-[var(--color-ink-black)]"
               >
-                {searchQuery || selectedCategory !== "all"
+                {searchQuery ||
+                selectedCategory !== "all" ||
+                activeTab !== "all"
                   ? "Results"
-                  : "Fresh near you"}
+                  : selectedArea === ALL_ABUJA
+                    ? "Fresh near you"
+                    : `Fresh in ${selectedArea}`}
               </h2>
-              <p className="mt-0.5 text-[13px] text-[var(--color-muted-gray)]">
+              <p className="mt-0.5 text-[13px] text-[var(--color-ash-veil)]">
                 Showing {filteredListings.length}{" "}
                 {filteredListings.length === 1 ? "item" : "items"}
-                {isLive ? " in Abuja" : " in this preview"}
+                {isLive ? ` in ${areaLabel}` : " in this preview"}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-1">
+              <div className="scrollbar-none flex max-w-full overflow-x-auto rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-1">
                 {[
                   { id: "all", label: "All" },
                   { id: "scrap", label: "Scrap & Parts" },
@@ -1269,7 +1338,7 @@ export function ShopLandingPage({
                     type="button"
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
                     aria-pressed={activeTab === tab.id}
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                    className={`min-h-11 shrink-0 rounded-full px-3 py-2 text-base font-semibold transition sm:min-h-0 sm:px-2.5 sm:py-1 sm:text-xs ${
                       activeTab === tab.id
                         ? "bg-[var(--color-ink-black)] text-[var(--color-pure-white)]"
                         : "text-[var(--color-muted-gray)] hover:text-[var(--color-ink-black)]"
@@ -1282,16 +1351,16 @@ export function ShopLandingPage({
               <label className="sr-only" htmlFor="feed-sort">
                 Sort listings
               </label>
-              <select
+              <FieldSelect
                 id="feed-sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="cursor-pointer rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)]"
+                className="h-auto min-h-11 w-auto py-2 pl-3 pr-9 text-base font-medium sm:min-h-0 sm:py-1.5 sm:text-xs"
               >
                 <option value="newest">Sort: Newest</option>
                 <option value="price_asc">Price: Low to High</option>
                 <option value="price_desc">Price: High to Low</option>
-              </select>
+              </FieldSelect>
             </div>
           </div>
 
@@ -1307,24 +1376,58 @@ export function ShopLandingPage({
                 />
               </div>
               <h3 className="mt-2 text-base font-semibold text-[var(--color-ink-black)]">
-                No items match your search
+                {initialItems.length === 0
+                  ? selectedArea === ALL_ABUJA
+                    ? "No listings yet"
+                    : `No items in ${selectedArea} yet`
+                  : "No items match your search"}
               </h3>
               <p className="mt-1 max-w-sm text-xs text-[var(--color-muted-gray)]">
-                Try clearing filters, searching different keywords, or
-                broadening your district.
+                {initialItems.length === 0
+                  ? selectedArea === ALL_ABUJA
+                    ? "New recoverable items will appear here as soon as they are listed."
+                    : `Try All Abuja, or be the first to list something in ${selectedArea}.`
+                  : "Try clearing filters or searching different keywords."}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                  setSelectedArea("All Abuja");
-                  setActiveTab("all");
-                }}
-                className="mt-5 rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 py-2 text-xs font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-black)] hover:bg-[var(--color-canvas-mist)]"
-              >
-                Reset all filters
-              </button>
+              {initialItems.length === 0 ? (
+                selectedArea !== ALL_ABUJA && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCategory("all");
+                      setActiveTab("all");
+                      handleSelectArea(ALL_ABUJA);
+                    }}
+                    className="mt-5 rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 py-2 text-xs font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-black)] hover:bg-[var(--color-canvas-mist)]"
+                  >
+                    Show all Abuja
+                  </button>
+                )
+              ) : (
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCategory("all");
+                      setActiveTab("all");
+                    }}
+                    className="rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 py-2 text-xs font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-black)] hover:bg-[var(--color-canvas-mist)]"
+                  >
+                    Reset filters
+                  </button>
+                  {selectedArea !== ALL_ABUJA && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectArea(ALL_ABUJA)}
+                      className="rounded-full px-3 py-2 text-xs font-semibold text-[var(--color-shop-violet)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+                    >
+                      Search all Abuja
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1356,9 +1459,9 @@ export function ShopLandingPage({
                       </span>
                     </div>
                     <div className="px-1.5 pb-1 pt-2.5">
-                      <h4 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
+                      <h3 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
                         {item.title}
-                      </h4>
+                      </h3>
                       <div className="mt-1.5 flex items-center justify-between">
                         <span className="font-sans tabular text-[14px] font-semibold tracking-tight text-[var(--color-ink-black)]">
                           {pricingLabel(item.pricing_type, item.price)}
@@ -1379,7 +1482,7 @@ export function ShopLandingPage({
 
           {/* Trending searches */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted-gray)]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ash-veil)]">
               Trending:
             </span>
             {TRENDING_QUERIES.map((t) => (
@@ -1421,14 +1524,14 @@ export function ShopLandingPage({
                 <button
                   type="button"
                   onClick={() => scrollToId("feed")}
-                  className="rounded-full bg-[var(--color-shop-violet)] px-6 py-2.5 text-xs font-semibold text-[var(--color-pure-white)] transition hover:opacity-95"
+                  className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-shop-violet)] px-6 py-2.5 text-xs font-semibold text-[var(--color-pure-white)] transition hover:opacity-95"
                 >
                   Explore listings
                 </button>
                 <button
                   type="button"
                   onClick={() => scrollToId("how")}
-                  className="rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 py-2.5 text-xs font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-black)]"
+                  className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 py-2.5 text-xs font-semibold text-[var(--color-ink-black)] transition hover:border-[var(--color-ink-black)]"
                 >
                   Learn how it works
                 </button>
@@ -1459,7 +1562,7 @@ export function ShopLandingPage({
             >
               How Pantaker works
             </h2>
-            <p className="mt-0.5 text-[13px] text-[var(--color-muted-gray)]">
+            <p className="mt-0.5 text-[13px] text-[var(--color-ash-veil)]">
               Three simple steps to give unwanted items another chance in Abuja
             </p>
           </div>
@@ -1480,7 +1583,7 @@ export function ShopLandingPage({
               {
                 step: "Step 3",
                 title: "Meet & trade safely",
-                copy: "Agree terms, meet in a public place, inspect the item before any payment is made.",
+                copy: "Pay online with buyer protection, or agree a cash sale. Meet in public, inspect the item, and confirm handover only when you're satisfied.",
                 illustration: "/illustrations/Waste management-rafiki.svg",
               },
             ].map((s) => (
@@ -1509,7 +1612,7 @@ export function ShopLandingPage({
         </section>
 
         {/* FOOTER */}
-        <footer className="mt-16 flex w-full flex-col items-center justify-between gap-4 border-t border-[var(--color-ink-06)] pb-12 pt-8 text-[12px] text-[var(--color-ash-veil)] sm:flex-row">
+        <footer className="mt-16 flex w-full flex-col items-center justify-between gap-4 border-t border-[var(--color-ink-06)] pt-8 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-[12px] text-[var(--color-ash-veil)] sm:flex-row lg:pb-8">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-[var(--color-ink-black)]">
               Pantaker
@@ -1529,7 +1632,9 @@ export function ShopLandingPage({
             </button>
             <button
               type="button"
-              onClick={() => router.push("/marketplace")}
+              onClick={() =>
+                router.push(withArea("/marketplace", selectedArea))
+              }
               className="transition-colors hover:text-[var(--color-ink-black)]"
             >
               Feed

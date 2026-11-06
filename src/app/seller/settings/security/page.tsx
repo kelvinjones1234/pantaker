@@ -46,13 +46,13 @@ export default async function SecurityPage() {
 
       <SettingsCard
         title="Recovering access"
-        description="Pantaker is passwordless, so recovery means getting a fresh sign-in code."
+        description="Sign in with your email and password. If you're locked out, contact Pantaker support."
       >
         <div>
           <SettingsRow
-            label="Lost access to your email"
-            note="If you can't receive the code, contact Pantaker support so we can help you regain access."
-            value={isLive ? "Email code" : "Not configured"}
+            label="Forgot your password"
+            note="Password recovery is handled by Pantaker support so we can verify it's really you."
+            value={isLive ? "Contact support" : "Not configured"}
           />
           <SettingsRow
             label="Account email"
@@ -72,7 +72,7 @@ export default async function SecurityPage() {
             href="/login"
             className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-5 text-sm font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
           >
-            Request a new sign-in code
+            Go to sign in
           </Link>
         </div>
       </SettingsCard>

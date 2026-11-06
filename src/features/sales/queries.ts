@@ -216,16 +216,40 @@ export async function getSellerSaleOptions(): Promise<SaleListingOption[]> {
   });
   if (rows.length === 0) return [];
 
-  const activeRows = await prisma.sale.findMany({
-    where: {
-      seller_id: user.id,
-      status: { in: [...ACTIVE_SALE_STATUSES] },
-      listing_id: { in: rows.map((row) => row.id) },
-    },
-    select: { listing_id: true },
-  });
+  const listingIds = rows.map((row) => row.id);
+  const [activeRows, activeOrders] = await Promise.all([
+    prisma.sale.findMany({
+      where: {
+        seller_id: user.id,
+        status: { in: [...ACTIVE_SALE_STATUSES] },
+        listing_id: { in: listingIds },
+      },
+      select: { listing_id: true },
+    }),
+    prisma.order.findMany({
+      where: {
+        seller_id: user.id,
+        listing_id: { in: listingIds },
+        status: {
+          in: [
+            "pending_payment",
+            "held",
+            "ready_for_handover",
+            "handed_over",
+            "release_blocked",
+            "disputed",
+            "refund_pending",
+          ],
+        },
+      },
+      select: { listing_id: true },
+    }),
+  ]);
 
-  const active = new Set(activeRows.map((row) => row.listing_id));
+  const active = new Set([
+    ...activeRows.map((row) => row.listing_id),
+    ...activeOrders.map((row) => row.listing_id),
+  ]);
 
   return rows.map((row) => ({
     id: row.id,

@@ -26,6 +26,7 @@ model User {
   id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email           String     @unique
   email_verified  DateTime?  @db.Timestamptz(6)
+  password_hash   String?
   name            String?
   image           String?
   admin_role      AdminRole?
@@ -37,12 +38,18 @@ model User {
   account_restriction   AccountRestriction?
   email_change_requests EmailChangeRequest[]
   listings              Listing[]
-  buyer_inquiries       Inquiry[]            @relation("InquiryBuyer")
-  seller_inquiries      Inquiry[]            @relation("InquirySeller")
-  reports_made          Report[]             @relation("ReportReporter")
-  reports_received      Report[]             @relation("ReportReportedUser")
-  reports_resolved      Report[]             @relation("ReportResolvedBy")
+  buyer_inquiries       Inquiry[]             @relation("InquiryBuyer")
+  seller_inquiries      Inquiry[]             @relation("InquirySeller")
+  reports_made          Report[]              @relation("ReportReporter")
+  reports_received      Report[]              @relation("ReportReportedUser")
+  reports_resolved      Report[]              @relation("ReportResolvedBy")
   upload_requests       UploadRequest[]
+  payment_account       SellerPaymentAccount?
+  buyer_orders          Order[]               @relation("OrderBuyer")
+  seller_orders         Order[]               @relation("OrderSeller")
+  order_events          OrderEvent[]
+  refunds_requested     OrderRefund[]
+  payouts               SellerPayout[]
 
   @@map("users")
 }
@@ -56,6 +63,12 @@ model Profile {
   area                  String?
   account_type          String    @default("individual")
   bio                   String?
+  phone                 String?
+  phone_is_whatsapp     Boolean   @default(false)
+  instagram_handle      String?
+  x_handle              String?
+  facebook_handle       String?
+  tiktok_handle         String?
   default_area          String?
   default_pickup_notes  String?
   deletion_requested_at DateTime? @db.Timestamptz(6)
@@ -67,14 +80,15 @@ model Profile {
 }
 
 model LoginOtp {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email       String
-  code_hash   String
-  expires_at  DateTime  @db.Timestamptz(6)
-  consumed_at DateTime? @db.Timestamptz(6)
-  attempts    Int       @default(0)
-  ip          String?
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String
+  code_hash     String
+  password_hash String?
+  expires_at    DateTime  @db.Timestamptz(6)
+  consumed_at   DateTime? @db.Timestamptz(6)
+  attempts      Int       @default(0)
+  ip            String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([email, created_at(sort: Desc)])
   @@index([expires_at])
@@ -247,9 +261,11 @@ model Listing {
   inquiries Inquiry[]
   reports   Report[]
   sale      Sale?
+  orders    Order[]
 
   @@index([category_id, item_status])
   @@index([item_status, published_at(sort: Desc)], where: raw("(item_status = 'published'::text)"))
+  @@index([area, published_at(sort: Desc)], where: raw("(item_status = 'published'::text)"))
   @@index([search_vector], type: Gin)
   @@index([seller_id, item_status, updated_at(sort: Desc)])
   @@map("listings")
@@ -273,6 +289,7 @@ model NotificationPreference {
   messages        Boolean  @default(true)
   sale_updates    Boolean  @default(true)
   listing_updates Boolean  @default(true)
+  order_updates   Boolean  @default(true)
   updated_at      DateTime @default(now()) @db.Timestamptz(6)
 
   @@map("notification_preferences")
@@ -347,6 +364,207 @@ model Sale {
   @@index([listing_id])
   @@index([seller_id, created_at(sort: Desc)])
   @@map("sales")
+}
+
+model SellerPaymentAccount {
+  user_id                String    @id @db.Uuid
+  bachs_account_id       String    @unique
+  onboarding_status      String    @default("pending")
+  transfers_status       String    @default("unrequested")
+  payouts_status         String    @default("unrequested")
+  destination_usable     Boolean   @default(false)
+  requirements           Json?
+  available_balance_kobo BigInt?
+  pending_balance_kobo   BigInt?
+  balance_synced_at      DateTime? @db.Timestamptz(6)
+  last_error             String?
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("seller_payment_accounts")
+}
+
+model Order {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_number         String    @unique
+  listing_id           String?   @db.Uuid
+  seller_id            String?   @db.Uuid
+  buyer_id             String?   @db.Uuid
+  buyer_name           String?
+  buyer_email          String?
+  seller_name          String?
+  item_title           String
+  item_amount_kobo     BigInt
+  commission_kobo      BigInt
+  seller_share_kobo    BigInt
+  currency             String    @default("NGN")
+  status               String    @default("pending_payment")
+  pickup_code_hash     String?
+  pickup_code_attempts Int       @default(0)
+  expires_at           DateTime? @db.Timestamptz(6)
+  paid_at              DateTime? @db.Timestamptz(6)
+  ready_at             DateTime? @db.Timestamptz(6)
+  handover_at          DateTime? @db.Timestamptz(6)
+  buyer_confirmed_at   DateTime? @db.Timestamptz(6)
+  release_due_at       DateTime? @db.Timestamptz(6)
+  released_at          DateTime? @db.Timestamptz(6)
+  cancelled_at         DateTime? @db.Timestamptz(6)
+  refunded_at          DateTime? @db.Timestamptz(6)
+  release_attempts     Int       @default(0)
+  last_release_error   String?
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @default(now()) @db.Timestamptz(6)
+
+  listing   Listing?        @relation(fields: [listing_id], references: [id], onDelete: SetNull)
+  seller    User?           @relation("OrderSeller", fields: [seller_id], references: [id], onDelete: SetNull)
+  buyer     User?           @relation("OrderBuyer", fields: [buyer_id], references: [id], onDelete: SetNull)
+  payment   OrderPayment?
+  events    OrderEvent[]
+  transfers OrderTransfer[]
+  refunds   OrderRefund[]
+  disputes  OrderDispute[]
+
+  @@index([buyer_id, created_at(sort: Desc)])
+  @@index([seller_id, created_at(sort: Desc)])
+  @@index([status, release_due_at])
+  @@index([listing_id])
+  @@index([refunded_at], where: raw("(refunded_at IS NOT NULL AND released_at IS NOT NULL)"))
+  @@map("orders")
+}
+
+model OrderPayment {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id          String    @unique @db.Uuid
+  provider          String    @default("bachs")
+  checkout_id       String?   @unique
+  charge_id         String?   @unique
+  checkout_url      String?
+  reference         String    @unique
+  idempotency_key   String    @unique
+  amount_kobo       BigInt
+  currency          String    @default("NGN")
+  status            String    @default("pending")
+  provider_fee_kobo BigInt?
+  failure_reason    String?
+  paid_at           DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_payments")
+}
+
+model OrderEvent {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id   String   @db.Uuid
+  actor_id   String?  @db.Uuid
+  type       String
+  message    String?
+  metadata   Json?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([order_id, created_at])
+  @@map("order_events")
+}
+
+model OrderTransfer {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id          String   @db.Uuid
+  type              String
+  bachs_transfer_id String?  @unique
+  idempotency_key   String   @unique
+  amount_kobo       BigInt
+  currency          String   @default("NGN")
+  status            String   @default("pending")
+  error             String?
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@index([order_id, created_at(sort: Desc)])
+  @@index([updated_at], where: raw("(status = 'pending'::text)"))
+  @@map("order_transfers")
+}
+
+model OrderRefund {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id        String   @db.Uuid
+  bachs_refund_id String?  @unique
+  idempotency_key String   @unique
+  amount_kobo     BigInt
+  status          String   @default("pending")
+  reason          String?
+  requested_by    String?  @db.Uuid
+  failure_reason  String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  order     Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  requester User? @relation(fields: [requested_by], references: [id], onDelete: SetNull)
+
+  @@index([order_id, created_at(sort: Desc)])
+  @@map("order_refunds")
+}
+
+model OrderDispute {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id         String    @db.Uuid
+  bachs_dispute_id String    @unique
+  status           String    @default("open")
+  amount_kobo      BigInt?
+  evidence_due_at  DateTime? @db.Timestamptz(6)
+  last_event_at    DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@index([order_id, created_at(sort: Desc)])
+  @@map("order_disputes")
+}
+
+model BachsWebhookEvent {
+  id               String    @id
+  type             String
+  account_id       String?
+  payload          Json
+  event_created_at DateTime? @db.Timestamptz(6)
+  received_at      DateTime  @default(now()) @db.Timestamptz(6)
+  processed_at     DateTime? @db.Timestamptz(6)
+  error            String?
+  attempts         Int       @default(1)
+
+  @@index([received_at(sort: Desc)])
+  @@map("bachs_webhook_events")
+}
+
+model SellerPayout {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seller_id          String?  @db.Uuid
+  bachs_payout_id    String?  @unique
+  destination_id     String?
+  reference          String   @unique
+  idempotency_key    String   @unique
+  amount_kobo        BigInt
+  fee_kobo           BigInt?
+  total_debited_kobo BigInt?
+  currency           String   @default("NGN")
+  status             String   @default("pending")
+  failure_reason     String?
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  seller User? @relation(fields: [seller_id], references: [id], onDelete: SetNull)
+
+  @@index([seller_id, created_at(sort: Desc)])
+  @@map("seller_payouts")
 }
 
 model UploadRequest {

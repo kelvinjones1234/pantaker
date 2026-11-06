@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
-import { getAuthUser, getProfile } from "@/features/auth/queries";
-import { isAuthConfigured } from "@/features/auth/authorization";
+import { getProfile } from "@/features/auth/queries";
+import { requireSeller } from "@/features/auth/authorization";
 import { getCategories } from "@/features/listings/queries";
 import { isImageStorageConfigured } from "@/lib/image-storage";
 import { ListingForm } from "@/components/seller/ListingForm";
+import {
+  getSellerPaymentAccount,
+  sellerCanReceivePayments,
+} from "@/features/payments/seller-accounts";
 
 export const metadata: Metadata = {
   title: "List an item — Pantaker",
@@ -14,21 +17,14 @@ export const metadata: Metadata = {
 };
 
 export default async function SellPage() {
-  const user = await getAuthUser().catch(() => null);
-  const authConfigured = isAuthConfigured();
-
-  // Local development (and explicit opt-in) can view the form without a session
-  // so it can be previewed before auth is wired up. Mutations still require a
-  // real session.
-  const allowPreviewAuth =
-    process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_PREVIEW_AUTH === "true";
-
-  if (authConfigured && !user && !allowPreviewAuth) {
-    redirect("/login?next=/sell");
-  }
+  const user = await requireSeller("/sell");
 
   const isLive = Boolean(user);
-  const [categories, profile] = await Promise.all([getCategories(), getProfile()]);
+  const [categories, profile, paymentAccount] = await Promise.all([
+    getCategories(),
+    getProfile(),
+    user ? getSellerPaymentAccount(user.id) : Promise.resolve(null),
+  ]);
 
   return (
     <div className="min-h-screen bg-[var(--shop-canvas)] text-[var(--color-ink-black)]">
@@ -38,7 +34,7 @@ export default async function SellPage() {
         </Link>
         <Link
           href="/seller/listings"
-          className="rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
+          className="inline-flex h-11 items-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
         >
           Cancel
         </Link>
@@ -61,6 +57,7 @@ export default async function SellPage() {
           categories={categories}
           isLive={isLive}
           imageUploadsConfigured={isImageStorageConfigured()}
+          onlinePaymentsActive={sellerCanReceivePayments(paymentAccount)}
           defaults={{
             area: profile?.default_area ?? null,
             pickup_notes: profile?.default_pickup_notes ?? null,

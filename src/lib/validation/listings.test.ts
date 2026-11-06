@@ -180,4 +180,67 @@ describe("seller profile validation", () => {
   it("falls back to an individual account for an unknown type", () => {
     expect(profileSchema.parse({ ...base, account_type: "weird" }).account_type).toBe("individual");
   });
+
+  it("strips the leading @ from social handles", () => {
+    const r = profileSchema.parse({
+      ...base,
+      instagram_handle: "@Amina.Bello",
+      x_handle: "@amina_b",
+      facebook_handle: "amina.bello",
+      tiktok_handle: "@amina.bello",
+    });
+    expect(r.instagram_handle).toBe("Amina.Bello");
+    expect(r.x_handle).toBe("amina_b");
+    expect(r.facebook_handle).toBe("amina.bello");
+    expect(r.tiktok_handle).toBe("amina.bello");
+  });
+
+  it("treats blank contact fields as none", () => {
+    const r = profileSchema.parse({
+      ...base,
+      phone: "",
+      instagram_handle: "",
+      x_handle: "",
+      facebook_handle: "",
+      tiktok_handle: "",
+    });
+    expect(r.phone).toBeNull();
+    expect(r.instagram_handle).toBeNull();
+    expect(r.x_handle).toBeNull();
+    expect(r.facebook_handle).toBeNull();
+    expect(r.tiktok_handle).toBeNull();
+  });
+
+  it("rejects full URLs and invalid handle characters", () => {
+    expect(
+      profileSchema.safeParse({
+        ...base,
+        instagram_handle: "https://instagram.com/amina",
+      }).success,
+    ).toBe(false);
+    expect(
+      profileSchema.safeParse({ ...base, x_handle: "bad handle" }).success,
+    ).toBe(false);
+    expect(
+      profileSchema.safeParse({ ...base, tiktok_handle: "a".repeat(25) }).success,
+    ).toBe(false);
+  });
+
+  it("keeps a free-text phone number but drops WhatsApp when there is no phone", () => {
+    const withPhone = profileSchema.parse({
+      ...base,
+      phone: "+234 (803) 000-0000",
+      phone_is_whatsapp: "true",
+    });
+    expect(withPhone.phone).toBe("+234 (803) 000-0000");
+    expect(withPhone.phone_is_whatsapp).toBe(true);
+
+    const withoutPhone = profileSchema.parse({
+      ...base,
+      phone: "",
+      phone_is_whatsapp: "true",
+    });
+    expect(withoutPhone.phone).toBeNull();
+    expect(withoutPhone.phone_is_whatsapp).toBe(false);
+  });
 });

@@ -27,7 +27,7 @@ export function SettingsSubnav() {
             href={group.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex shrink-0 items-center rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-150",
+              "inline-flex min-h-11 shrink-0 items-center rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-150",
               active
                 ? "bg-[var(--color-shop-violet)] text-[var(--color-pure-white)]"
                 : "border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-ink-black)] hover:border-[var(--color-ink-30)]",

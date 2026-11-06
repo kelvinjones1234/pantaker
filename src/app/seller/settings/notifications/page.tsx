@@ -18,7 +18,7 @@ export default async function NotificationsSettingsPage() {
     <div className="flex flex-col gap-5">
       <SellerPageHeader
         title="Notifications"
-        description="Pantaker only shows controls for channels and events it actually delivers. Today that's in-app notifications, shown under the bell in your Seller Centre."
+        description="Pantaker only shows controls for channels and events it actually delivers. Today that's in-app notifications, shown under the bell in your Dashboard."
       />
 
       <SettingsCard

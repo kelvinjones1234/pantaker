@@ -28,7 +28,7 @@ export default async function SellerProfilePage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <SellerPageHeader
         title="Profile"
-        description="How you appear to buyers across Pantaker. Only your display name, username, location, bio, and photo are shown."
+        description="How you appear to buyers across Pantaker. Your display name, username, location, photo, and any contact details you add are shown on your listings."
       />
       <ProfileForm
         initial={{
@@ -38,6 +38,12 @@ export default async function SellerProfilePage() {
           city: profile?.city ?? "",
           area: profile?.area ?? "",
           bio: profile?.bio ?? "",
+          phone: profile?.phone ?? "",
+          phone_is_whatsapp: profile?.phone_is_whatsapp ?? false,
+          instagram_handle: profile?.instagram_handle ?? "",
+          x_handle: profile?.x_handle ?? "",
+          facebook_handle: profile?.facebook_handle ?? "",
+          tiktok_handle: profile?.tiktok_handle ?? "",
           avatarId: profile?.avatar_path ?? undefined,
           avatarUrl,
         }}

@@ -415,5 +415,61 @@ export function SendIcon({ className }: P): ReactElement {
   );
 }
 
+export function PhoneIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path d="M7 3.8h3l1.4 3.6-2 1.5a12 12 0 0 0 5.7 5.7l1.5-2 3.6 1.4v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5 6a2 2 0 0 1 2-2.2Z" />
+    </Svg>
+  );
+}
+
+export function WhatsAppIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path d="M20 11.6a8 8 0 0 1-11.8 7.1L4 20l1.3-4.1A8 8 0 1 1 20 11.6Z" />
+      <path d="M9.2 8.1c.3-.1.7 0 .9.3l.8 1.4c.1.3.1.6-.1.8l-.5.6a6.5 6.5 0 0 0 3.4 3.1l.6-.6c.2-.2.5-.2.8-.1l1.5.7c.3.1.4.5.3.8-.2.7-.9 1.2-1.7 1.1a8 8 0 0 1-7-6.3c-.2-.8.3-1.6 1-1.8Z" />
+    </Svg>
+  );
+}
+
+export function InstagramIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <rect x={3.5} y={3.5} width={17} height={17} rx={5} />
+      <circle cx={12} cy={12} r={3.6} />
+      <circle cx={17.1} cy={6.9} r={1} fill="currentColor" stroke="none" />
+    </Svg>
+  );
+}
+
+export function XLogoIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path
+        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </Svg>
+  );
+}
+
+export function FacebookIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path d="M14.5 21v-7h2.6l.5-3h-3.1V9.2c0-.9.3-1.5 1.6-1.5H18V5.1c-.3 0-1.3-.1-2.4-.1-2.4 0-4.1 1.5-4.1 4.2V11H9v3h2.5v7" />
+    </Svg>
+  );
+}
+
+export function TikTokIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path d="M14 4v9.5a4 4 0 1 1-3.2-3.9" />
+      <path d="M14 4c.4 2.6 2.1 4.3 4.8 4.6" />
+    </Svg>
+  );
+}
+
 /** Component type for icon maps (e.g. department chips). */
 export type BrandIconComponent = (props: BrandIconProps) => ReactElement;

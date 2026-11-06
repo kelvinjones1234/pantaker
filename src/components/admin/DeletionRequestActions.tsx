@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AdminActionMenu, type AdminActionMenuItem } from "@/components/admin/AdminActionMenu";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   dismissDeletionRequestAction,
   processDeletionRequestAction,

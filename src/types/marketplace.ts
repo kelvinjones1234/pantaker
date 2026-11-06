@@ -118,7 +118,17 @@ export type NotificationType =
   | "listing_rejected"
   | "new_message"
   | "sale_status_changed"
-  | "account_email_change";
+  | "account_email_change"
+  | "order_paid"
+  | "order_ready"
+  | "order_handover"
+  | "order_released"
+  | "order_refunded"
+  | "order_disputed"
+  | "order_cancelled"
+  | "order_issue"
+  | "order_payment_failed"
+  | "order_expired";
 
 export interface AppNotification {
   id: string;
@@ -141,6 +151,7 @@ export interface NotificationPreferences {
   messages: boolean;
   sale_updates: boolean;
   listing_updates: boolean;
+  order_updates: boolean;
   updated_at: string;
 }
 

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth/AuthCard";
-import { AuthForm } from "@/components/auth/AuthForm";
+import { LoginForm } from "@/components/auth/LoginForm";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to Pantaker with a one-time code sent to your email.",
+  description: "Sign in to Pantaker with your email and password.",
 };
 
 export default async function LoginPage({
@@ -18,11 +18,11 @@ export default async function LoginPage({
 
   return (
     <AuthCard
-      eyebrow="Welcome to Pantaker"
-      title="Sign in or create your account"
-      subtitle=""
+      eyebrow="Welcome back"
+      title="Sign in to Pantaker"
+      subtitle="Enter the email and password you signed up with."
     >
-      <AuthForm next={next} initialError={params.error} />
+      <LoginForm next={next} initialError={params.error} />
     </AuthCard>
   );
 }

@@ -16,7 +16,7 @@ export default function PublicLayout({
           </Link>
           <Link
             href="/marketplace"
-            className="text-[13px] font-semibold text-[var(--color-shop-violet)] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-[13px] font-semibold text-[var(--color-shop-violet)] underline-offset-4 hover:underline"
           >
             Browse marketplace
           </Link>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MarketplaceHeader } from "@/components/marketplace/MarketplaceHeader";
+import { MarketplaceMobileDock } from "@/components/marketplace/MarketplaceMobileDock";
 import { getAuthUser } from "@/features/auth/queries";
 import { isAdminUser } from "@/features/admin/roles";
 
@@ -16,8 +17,9 @@ export default async function MarketplaceLayout({
         user={user ? { email: user.email, isAdmin: isAdminUser(user) } : null}
       />
       {children}
+      <MarketplaceMobileDock user={user ? { email: user.email } : null} />
       <footer className="mt-12 border-t border-[var(--color-faint-border)]">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center justify-between gap-3 px-4 py-8 text-[12px] text-[var(--color-ash-veil)] sm:flex-row sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center justify-between gap-3 px-4 pt-8 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-[12px] text-[var(--color-ash-veil)] sm:flex-row sm:px-6 lg:pb-8">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-[var(--color-ink-black)]">
               Pantaker
@@ -44,7 +46,7 @@ export default async function MarketplaceLayout({
               How it works
             </Link>
             <Link
-              href="/sell"
+              href={user ? "/sell" : "/login?next=/sell"}
               className="transition-colors duration-150 hover:text-[var(--color-ink-black)]"
             >
               Sell an item

@@ -20,7 +20,7 @@ export default async function BuyerInboxPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
       <Link
         href="/marketplace"
-        className="text-[12px] font-semibold text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
+        className="inline-flex min-h-11 items-center text-[12px] font-semibold text-[var(--color-shop-violet)] transition-colors duration-150 hover:text-[var(--color-primary-hover)]"
       >
         ← Back to marketplace
       </Link>
@@ -31,7 +31,7 @@ export default async function BuyerInboxPage() {
       >
         <Link
           href="/seller/messages"
-          className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
         >
           Selling messages
         </Link>

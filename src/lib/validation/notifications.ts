@@ -15,6 +15,7 @@ export const notificationPreferencesSchema = z.object({
   messages: checkbox,
   sale_updates: checkbox,
   listing_updates: checkbox,
+  order_updates: checkbox,
 });
 
 export type NotificationPreferencesInput = z.infer<typeof notificationPreferencesSchema>;

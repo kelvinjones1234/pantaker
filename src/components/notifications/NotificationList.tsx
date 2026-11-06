@@ -24,6 +24,16 @@ const TYPE_ICON: Record<NotificationType, BrandIconComponent> = {
   new_message: ChatIcon,
   sale_status_changed: ReceiptIcon,
   account_email_change: KeyIcon,
+  order_paid: ReceiptIcon,
+  order_ready: ReceiptIcon,
+  order_handover: ReceiptIcon,
+  order_released: ReceiptIcon,
+  order_refunded: ReceiptIcon,
+  order_disputed: ReceiptIcon,
+  order_cancelled: ReceiptIcon,
+  order_issue: ReceiptIcon,
+  order_payment_failed: ReceiptIcon,
+  order_expired: ReceiptIcon,
 };
 
 function NotificationRow({
@@ -125,7 +135,7 @@ export function NotificationList({ items }: { items: AppNotification[] }) {
             type="button"
             onClick={markAll}
             disabled={isPending}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-[var(--color-canvas-mist)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)] disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--color-canvas-mist)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)] disabled:cursor-wait disabled:opacity-60"
           >
             <CheckIcon className="h-3.5 w-3.5" />
             Mark all as read

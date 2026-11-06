@@ -23,8 +23,8 @@ export type UpdateProfileResult =
 /**
  * Update the signed-in user's own profile. The row id is always the session user
  * id — a client cannot target another profile, because no id is ever read from
- * the request. Credentials/identity are owned by public.users, not written here,
- * and no contact details are collected, so nothing private can be exposed.
+ * the request. Credentials/identity are owned by public.users, not written here.
+ * Contact details are optional and published only when the seller supplies them.
  */
 export async function updateProfileAction(
   formData: FormData,
@@ -42,6 +42,12 @@ export async function updateProfileAction(
     city: formData.get("city") || null,
     area: formData.get("area") || null,
     bio: formData.get("bio") || null,
+    phone: formData.get("phone") || null,
+    phone_is_whatsapp: formData.get("phone_is_whatsapp") ?? false,
+    instagram_handle: formData.get("instagram_handle") ?? null,
+    x_handle: formData.get("x_handle") ?? null,
+    facebook_handle: formData.get("facebook_handle") ?? null,
+    tiktok_handle: formData.get("tiktok_handle") ?? null,
   });
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };

@@ -13,11 +13,17 @@ import { SellerEmptyState } from "@/components/seller/SellerEmptyState";
 import { SellerStatusPill } from "@/components/seller/SellerStatusPill";
 import { StorageImage } from "@/components/ui/storage-image";
 import { AlertIcon, ArrowRightIcon, PackageIcon, PlusIcon } from "@/components/brand/icons";
+import { SellerPaymentsPrompt } from "@/components/seller/SellerPaymentsPrompt";
+import {
+  getSellerPaymentAccount,
+  sellerCanReceivePayments,
+} from "@/features/payments/seller-accounts";
+import { isBachsConfigured } from "@/lib/bachs/config";
 import { pricingLabel, timeAgo } from "@/lib/utils";
 import type { Listing } from "@/types/marketplace";
 
 export const metadata: Metadata = {
-  title: "Seller Centre — Pantaker",
+  title: "Dashboard — Pantaker",
   description: "Your Pantaker listings, enquiries, and attention items.",
 };
 
@@ -56,15 +62,23 @@ function RecentListing({ listing }: { listing: Listing }) {
 }
 
 export default async function SellerOverviewPage() {
-  await requireSeller("/seller");
+  const user = await requireSeller("/seller");
 
-  const [stats, recent, attention] = await Promise.all([
+  const [stats, recent, attention, paymentAccount] = await Promise.all([
     getSellerStats(),
     getSellerRecentListings(5),
     getSellerAttention(5),
+    user ? getSellerPaymentAccount(user.id) : Promise.resolve(null),
   ]);
 
   const listItemHref = "/seller/listings";
+  const paymentsPrompt = (
+    <SellerPaymentsPrompt
+      configured={isBachsConfigured()}
+      hasAccount={Boolean(paymentAccount)}
+      transfersActive={sellerCanReceivePayments(paymentAccount)}
+    />
+  );
 
   if (stats.total === 0) {
     return (
@@ -73,6 +87,7 @@ export default async function SellerOverviewPage() {
           title="Welcome to your seller workspace"
           description="Track what you're selling, see enquiries, and keep listings healthy."
         />
+        {paymentsPrompt}
         <SellerEmptyState
           icon={<PackageIcon className="h-7 w-7 text-[var(--color-shop-violet)]" />}
           heading="You haven't listed anything yet"
@@ -112,6 +127,8 @@ export default async function SellerOverviewPage() {
           List an item
         </Link>
       </SellerPageHeader>
+
+      {paymentsPrompt}
 
       <section aria-label="Key metrics" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SellerMetricCard label="Total listings" value={stats.total} href={listItemHref} />

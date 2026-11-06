@@ -44,12 +44,15 @@ describe("seller listing status transitions", () => {
 });
 
 describe("deletion eligibility", () => {
-  it("protects live listings from direct deletion", () => {
-    expect(canDelete("published")).toBe(false);
-  });
-
-  it("allows drafts, rejected, archived, sold, and pending listings", () => {
-    for (const status of ["draft", "pending_review", "rejected", "archived", "sold"] as const) {
+  it("allows every seller-managed listing status", () => {
+    for (const status of [
+      "draft",
+      "pending_review",
+      "published",
+      "rejected",
+      "sold",
+      "archived",
+    ] as const) {
       expect(canDelete(status)).toBe(true);
     }
   });

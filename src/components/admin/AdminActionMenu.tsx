@@ -173,7 +173,7 @@ export function AdminActionMenu({
 
   const itemClass = (item: AdminActionMenuItem) =>
     cn(
-      "flex w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-[13px] font-medium outline-none transition-colors duration-150",
+      "flex min-h-11 w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left text-[13px] font-medium outline-none transition-colors duration-150",
       item.disabled
         ? "cursor-not-allowed text-[var(--color-cool-stone)]"
         : item.tone === "danger"
@@ -193,7 +193,7 @@ export function AdminActionMenu({
         aria-label={label}
         onClick={() => (open ? close() : openAt(0))}
         onKeyDown={onTriggerKeyDown}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
+        className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
       >
         <MoreIcon className="h-5 w-5" />
       </button>
@@ -213,7 +213,7 @@ export function AdminActionMenu({
               left: coords?.left ?? 0,
               visibility: coords ? "visible" : "hidden",
             }}
-            className="z-40 max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-1.5"
+            className="z-40 max-h-[calc(100dvh-16px)] min-w-[200px] max-w-[calc(100vw-16px)] overflow-y-auto overscroll-contain rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-1.5"
           >
             {items.map((item, index) => {
               const ref = (element: HTMLElement | null) => {

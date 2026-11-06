@@ -62,6 +62,7 @@ export async function updateNotificationPreferencesAction(
     messages: formData.get("messages"),
     sale_updates: formData.get("sale_updates"),
     listing_updates: formData.get("listing_updates"),
+    order_updates: formData.get("order_updates"),
   });
   if (!parsed.success) {
     return { ok: false, error: "Those preferences could not be read." };

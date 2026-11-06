@@ -61,9 +61,16 @@ export default async function SellerSalesPage({
   return (
     <div className="flex flex-col gap-6">
       <SellerPageHeader
-        title="Sales"
-        description="Record who bought what, agree a price, and track each sale through to collection. Pantaker doesn't process payments — this is your own record."
-      />
+        title="Manual sales"
+        description="Off-platform sales you record yourself. For buyer-protected orders paid through Pantaker, use Online orders."
+      >
+        <Link
+          href="/seller/orders"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+        >
+          Online orders
+        </Link>
+      </SellerPageHeader>
 
       <details className="shop-card group p-5 sm:p-7">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">

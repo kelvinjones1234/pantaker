@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-26T21:46:05.040Z",
+        "reason": "Inter is documented as the at-runtime substitute for GT Standard in DESIGN.md"
+      }
+    ]
+  }
+}

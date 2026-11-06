@@ -13,7 +13,7 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   const base =
-    "flex h-9 min-w-9 cursor-pointer items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors duration-150";
+    "flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors duration-150 sm:h-9 sm:min-w-9";
 
   return (
     <nav aria-label="Pagination" className="mt-8 flex flex-wrap items-center justify-center gap-1.5">

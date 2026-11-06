@@ -6,7 +6,7 @@ import { ABUJA_AREAS, ALL_ABUJA } from "@/lib/areas";
 import { updateListingPreferencesAction } from "@/features/settings/actions";
 
 const inputClass =
-  "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
+  "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-base text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)] sm:text-sm";
 
 const AREA_OPTIONS = ABUJA_AREAS.filter((area) => area.name !== ALL_ABUJA).map((area) => area.name);
 
@@ -71,7 +71,7 @@ export function ListingPreferencesForm({
             name="default_area"
             value={area}
             onChange={(event) => setArea(event.target.value)}
-            className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+            className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-base text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] sm:text-sm"
           >
             <option value="">No default — choose per listing</option>
             {AREA_OPTIONS.map((option) => (

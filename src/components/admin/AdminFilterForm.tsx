@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SearchIcon } from "@/components/brand/icons";
-import { fieldSelectClass } from "@/components/ui/form-field";
+import { FieldSelect } from "@/components/ui/form-field";
 
 /**
  * Server-rendered GET filter bar for an admin directory. It works without
@@ -42,7 +42,7 @@ export function AdminFilterForm({
       method="get"
       className="shop-card flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end"
     >
-      <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:min-w-[220px]">
         <label htmlFor="admin-search" className="text-xs font-semibold text-[var(--color-ink-black)]">
           {searchLabel}
         </label>
@@ -55,7 +55,7 @@ export function AdminFilterForm({
             defaultValue={q}
             placeholder={searchPlaceholder}
             autoComplete="off"
-            className="h-11 w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-11 pr-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+            className="h-11 w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-11 pr-4 text-base text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] sm:text-sm"
           />
         </div>
       </div>
@@ -68,18 +68,17 @@ export function AdminFilterForm({
           >
             {filter.label}
           </label>
-          <select
+          <FieldSelect
             id={`admin-filter-${filter.name}`}
             name={filter.name}
             defaultValue={filter.value}
-            className={fieldSelectClass}
           >
             {filter.options.map((option) => (
               <option key={option.value || "all"} value={option.value}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </FieldSelect>
         </div>
       ))}
 

@@ -14,7 +14,7 @@ export type IssueCodeResult =
 
 export type VerifyCodeResult =
   | { ok: true; user: User }
-  | { ok: false; reason: "invalid" | "too_many_attempts" };
+  | { ok: false; reason: "invalid" | "too_many_attempts" | "account_exists" };
 
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -50,8 +50,14 @@ function generateCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
-export async function issueLoginCode(
+/**
+ * Issue the email verification code used during sign-up. The already-hashed
+ * password rides along on the OTP row so verification can create the account
+ * without the plaintext password making a second round trip.
+ */
+export async function issueSignupCode(
   emailInput: string,
+  passwordHash: string,
   ip: string | null,
 ): Promise<IssueCodeResult> {
   const prisma = getPrisma();
@@ -87,20 +93,30 @@ export async function issueLoginCode(
   const code = generateCode();
   const expiresAt = new Date(now.getTime() + CODE_TTL_MS);
   const otp = await prisma.loginOtp.create({
-    data: { email, code_hash: hashCode(email, code), expires_at: expiresAt, ip },
+    data: {
+      email,
+      code_hash: hashCode(email, code),
+      password_hash: passwordHash,
+      expires_at: expiresAt,
+      ip,
+    },
     select: { id: true },
   });
 
   return { ok: true, id: otp.id, code, expiresAt };
 }
 
-export async function cancelLoginCode(id: string): Promise<void> {
+export async function cancelSignupCode(id: string): Promise<void> {
   await getPrisma()
     .loginOtp.update({ where: { id }, data: { consumed_at: new Date() } })
     .catch(() => undefined);
 }
 
-export async function verifyLoginCode(
+/**
+ * Verify a sign-up code and create (or upgrade) the account with the password
+ * hash captured when the code was requested.
+ */
+export async function verifySignupCode(
   emailInput: string,
   code: string,
 ): Promise<VerifyCodeResult> {
@@ -113,7 +129,7 @@ export async function verifyLoginCode(
     orderBy: { created_at: "desc" },
   });
 
-  if (!otp) return { ok: false, reason: "invalid" };
+  if (!otp || !otp.password_hash) return { ok: false, reason: "invalid" };
   if (otp.attempts >= MAX_ATTEMPTS) return { ok: false, reason: "too_many_attempts" };
 
   if (!hashesMatch(otp.code_hash, hashCode(email, code))) {
@@ -124,6 +140,7 @@ export async function verifyLoginCode(
     return { ok: false, reason: "invalid" };
   }
 
+  const passwordHash = otp.password_hash;
   const user = await prisma.$transaction(async (tx) => {
     const claimed = await tx.loginOtp.updateMany({
       where: { id: otp.id, consumed_at: null, attempts: { lt: MAX_ATTEMPTS } },
@@ -131,11 +148,20 @@ export async function verifyLoginCode(
     });
     if (claimed.count !== 1) return null;
 
-    const account = await tx.user.upsert({
+    const existing = await tx.user.findUnique({
       where: { email },
-      create: { email, email_verified: now },
-      update: { email_verified: now },
+      select: { id: true, password_hash: true },
     });
+    if (existing?.password_hash) return null;
+
+    const account = existing
+      ? await tx.user.update({
+          where: { id: existing.id },
+          data: { email_verified: now, password_hash: passwordHash },
+        })
+      : await tx.user.create({
+          data: { email, email_verified: now, password_hash: passwordHash },
+        });
 
     await tx.profile.upsert({
       where: { id: account.id },
@@ -146,6 +172,6 @@ export async function verifyLoginCode(
     return account;
   });
 
-  if (!user) return { ok: false, reason: "invalid" };
+  if (!user) return { ok: false, reason: "account_exists" };
   return { ok: true, user };
 }

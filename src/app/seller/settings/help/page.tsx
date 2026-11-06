@@ -16,11 +16,11 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: "How do buyers contact me?",
-    a: "Buyers send an enquiry from your listing. Enquiries are counted on your Overview page; there is no public phone number or email on your profile.",
+    a: "Buyers can send an enquiry from your listing. If you add a phone number or social handles to your profile, they also appear on every published listing so buyers can reach you directly. Those details are optional and hidden when left blank.",
   },
   {
     q: "How do I sign in?",
-    a: "Enter your email and we'll send a 6-digit code. Pantaker is passwordless, so there's no password to reset or remember.",
+    a: "Enter your email and password. New accounts confirm the email address with a 6-digit code during sign-up.",
   },
   {
     q: "Can I delete a published listing?",
@@ -84,7 +84,7 @@ export default async function HelpSettingsPage() {
             to check what actions are available for it.
           </li>
           <li>
-            If you can&apos;t get into your account, request a new sign-in code on the{" "}
+            If you can&apos;t get into your account, sign in with your password on the{" "}
             <Link href="/login" className="font-semibold text-[var(--color-shop-violet)] underline">
               sign-in page
             </Link>

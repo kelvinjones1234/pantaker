@@ -2,6 +2,7 @@ import {
   AlertIcon,
   GridIcon,
   HomeIcon,
+  ReceiptIcon,
   ShieldIcon,
   TagIcon,
   TrashIcon,
@@ -38,6 +39,18 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: "Accounts",
     icon: UserIcon,
     permission: "users.view",
+  },
+  {
+    href: "/admin/orders",
+    label: "Orders",
+    icon: ReceiptIcon,
+    permission: "payments.manage",
+  },
+  {
+    href: "/admin/webhooks",
+    label: "Webhooks",
+    icon: GridIcon,
+    permission: "payments.manage",
   },
   {
     href: "/admin/categories",

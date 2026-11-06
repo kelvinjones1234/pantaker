@@ -2,21 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusIcon } from "@/components/brand/icons";
 import { cn } from "@/lib/utils";
 import { sellerNavForMobile, isSellerNavActive } from "@/components/seller/seller-nav";
 
+const unreadLabel = (count: number) => (count > 9 ? "9+" : String(count));
+
 /**
- * Bottom dock for the Seller Centre on small screens. Mirrors the desktop rail;
- * the primary "List" action sits in the middle so it is always reachable.
+ * Bottom dock for the Dashboard on small screens. Mirrors the desktop rail;
+ * listing creation stays in the sticky mobile header so the dock keeps five
+ * comfortable targets.
  */
 export function SellerMobileNav({ unreadMessages = 0 }: { unreadMessages?: number }) {
   const pathname = usePathname();
 
   return (
     <nav
-      aria-label="Seller Centre"
-      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around gap-1 bg-[var(--shop-glass)] px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-1.5 backdrop-blur-md lg:hidden"
+      aria-label="Dashboard"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-1 bg-[var(--shop-glass)] px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-1.5 backdrop-blur-md lg:hidden"
     >
       {sellerNavForMobile().map((item) => {
         const active = isSellerNavActive(pathname, item);
@@ -27,8 +29,10 @@ export function SellerMobileNav({ unreadMessages = 0 }: { unreadMessages?: numbe
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-1.5 text-[11px] font-medium transition-colors duration-150",
-              active ? "text-[var(--color-ink-black)]" : "text-[var(--color-ash-veil)]",
+              "flex min-h-12 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-[16px] px-1 py-1.5 text-xs font-medium transition-colors duration-150",
+              active
+                ? "bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)]"
+                : "text-[var(--color-ash-veil)] hover:bg-[var(--color-canvas-mist)]",
             )}
           >
             <span className="relative">
@@ -38,7 +42,7 @@ export function SellerMobileNav({ unreadMessages = 0 }: { unreadMessages?: numbe
                   className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-1 text-[10px] font-semibold text-[var(--color-pure-white)]"
                   aria-label={`${unreadMessages} unread messages`}
                 >
-                  {unreadMessages}
+                  {unreadLabel(unreadMessages)}
                 </span>
               )}
             </span>
@@ -46,15 +50,6 @@ export function SellerMobileNav({ unreadMessages = 0 }: { unreadMessages?: numbe
           </Link>
         );
       })}
-      <Link
-        href="/sell"
-        className="flex flex-1 flex-col items-center gap-1 rounded-[16px] px-2 py-1.5 text-[11px] font-semibold text-[var(--color-shop-violet)]"
-      >
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-shop-violet)] text-[var(--color-pure-white)]">
-          <PlusIcon className="h-3.5 w-3.5" />
-        </span>
-        List
-      </Link>
     </nav>
   );
 }

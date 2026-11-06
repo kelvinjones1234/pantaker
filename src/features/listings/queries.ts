@@ -10,6 +10,11 @@ import { paginationDefaults } from "@/config/site";
 import { deliveryUrl, isImageStorageConfigured } from "@/lib/image-storage";
 import { getPrisma, isPrismaConfigured } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
+import { ALL_ABUJA } from "@/lib/areas";
+import {
+  availableContactChannels,
+  type AvailableContactChannels,
+} from "@/lib/contact";
 import type { Prisma } from "@/generated/prisma/client";
 
 /** Cover image URL for a listing, from its lowest sort_order object key. */
@@ -221,6 +226,25 @@ export interface ListingDetailImage {
   alt: string | null;
 }
 
+export interface ListingDetailSeller {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_path: string | null;
+  city: string | null;
+  area: string | null;
+  bio: string | null;
+  account_type: string;
+  phone: string | null;
+  phone_is_whatsapp: boolean;
+  instagram_handle: string | null;
+  x_handle: string | null;
+  facebook_handle: string | null;
+  tiktok_handle: string | null;
+  created_at: string;
+  available_channels?: AvailableContactChannels;
+}
+
 export interface ListingDetail {
   id: string;
   seller_id: string;
@@ -241,17 +265,7 @@ export interface ListingDetail {
   updated_at: string;
   category: { name: string; slug: string } | null;
   images: ListingDetailImage[];
-  seller: {
-    id: string;
-    display_name: string | null;
-    username: string | null;
-    avatar_path: string | null;
-    city: string | null;
-    area: string | null;
-    bio: string | null;
-    account_type: string;
-    created_at: string;
-  } | null;
+  seller: ListingDetailSeller | null;
   /** True when the row came from SAMPLE_LISTINGS (local preview only). */
   sample: boolean;
 }
@@ -260,9 +274,17 @@ export interface ListingDetail {
  * A single public listing for the detail page. Only published rows are returned;
  * sellers preview drafts through the seller dashboard instead. Cached per
  * request so metadata and page rendering share one query.
+ *
+ * When `viewerUserId` is omitted or null, sensitive seller contact details
+ * (phone number, WhatsApp, and social handles) are redacted on the server to
+ * prevent web scraping, while providing `available_channels` flags so the UI can
+ * display the locked teaser.
  */
 export const getListingDetail = cache(
-  async (id: string): Promise<ListingDetail | null> => {
+  async (
+    id: string,
+    viewerUserId?: string | null,
+  ): Promise<ListingDetail | null> => {
     if (!isPrismaConfigured()) {
       const sample = SAMPLE_LISTINGS.find((item) => item.id === id);
       if (!sample) return null;
@@ -330,6 +352,12 @@ export const getListingDetail = cache(
                 area: true,
                 bio: true,
                 account_type: true,
+                phone: true,
+                phone_is_whatsapp: true,
+                instagram_handle: true,
+                x_handle: true,
+                facebook_handle: true,
+                tiktok_handle: true,
                 created_at: true,
               },
             },
@@ -353,7 +381,36 @@ export const getListingDetail = cache(
       }
     });
 
-    const seller = row.seller?.profile;
+    const rawSeller = row.seller?.profile;
+    const channels = availableContactChannels(rawSeller);
+    const isAuthenticated = Boolean(viewerUserId);
+
+    const seller: ListingDetailSeller | null = rawSeller
+      ? {
+          id: rawSeller.id,
+          display_name: rawSeller.display_name,
+          username: rawSeller.username,
+          avatar_path: rawSeller.avatar_path,
+          city: rawSeller.city,
+          area: rawSeller.area,
+          bio: rawSeller.bio,
+          account_type: rawSeller.account_type,
+          phone: isAuthenticated ? rawSeller.phone : null,
+          phone_is_whatsapp: isAuthenticated
+            ? rawSeller.phone_is_whatsapp
+            : false,
+          instagram_handle: isAuthenticated
+            ? rawSeller.instagram_handle
+            : null,
+          x_handle: isAuthenticated ? rawSeller.x_handle : null,
+          facebook_handle: isAuthenticated
+            ? rawSeller.facebook_handle
+            : null,
+          tiktok_handle: isAuthenticated ? rawSeller.tiktok_handle : null,
+          created_at: rawSeller.created_at.toISOString(),
+          available_channels: channels,
+        }
+      : null;
 
     return {
       id: row.id,
@@ -375,9 +432,7 @@ export const getListingDetail = cache(
       updated_at: row.updated_at.toISOString(),
       category: row.category,
       images,
-      seller: seller
-        ? { ...seller, created_at: seller.created_at.toISOString() }
-        : null,
+      seller,
       sample: false,
     };
   },
@@ -472,6 +527,60 @@ export async function getRelatedListings({
     : [];
 
   return { seller, similar: similarRows.map(toCardListing) };
+}
+
+export async function getAreaCounts(): Promise<Record<string, number>> {
+  if (!isPrismaConfigured()) {
+    const counts: Record<string, number> = { [ALL_ABUJA]: SAMPLE_LISTINGS.length };
+    for (const item of SAMPLE_LISTINGS) {
+      if (!item.area) continue;
+      counts[item.area] = (counts[item.area] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  const rows = await getPrisma().listing.groupBy({
+    by: ["area"],
+    where: { item_status: "published" },
+    _count: { _all: true },
+  });
+
+  const counts: Record<string, number> = { [ALL_ABUJA]: 0 };
+  for (const row of rows) {
+    const count = row._count._all;
+    counts[ALL_ABUJA] += count;
+    if (row.area) counts[row.area] = (counts[row.area] ?? 0) + count;
+  }
+  return counts;
+}
+
+export async function getCategoryCounts(area: string): Promise<Record<string, number>> {
+  if (!isPrismaConfigured()) {
+    const counts: Record<string, number> = {};
+    for (const item of SAMPLE_LISTINGS) {
+      if (area !== ALL_ABUJA && item.area !== area) continue;
+      const slug =
+        SAMPLE_CATEGORIES.find((category) => category.name === item.category)
+          ?.slug ?? slugify(item.category);
+      counts[slug] = (counts[slug] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  const where: Prisma.ListingWhereInput = { item_status: "published" };
+  if (area !== ALL_ABUJA) where.area = area;
+
+  const categories = await getPrisma().category.findMany({
+    where: { is_active: true },
+    select: {
+      slug: true,
+      _count: { select: { listings: { where } } },
+    },
+  });
+
+  return Object.fromEntries(
+    categories.map((category) => [category.slug, category._count.listings]),
+  );
 }
 
 export async function getCategories() {

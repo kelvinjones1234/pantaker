@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Consistent page heading for every Seller Centre page. */
+/** Consistent page heading for every Dashboard page. */
 export function SellerPageHeader({
   title,
   description,

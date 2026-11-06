@@ -43,6 +43,7 @@ export type AdminPermission =
   | "users.view"
   | "users.manage"
   | "analytics.view"
+  | "payments.manage"
   | "admins.manage";
 
 export const ADMIN_PERMISSIONS: readonly AdminPermission[] = [
@@ -51,6 +52,7 @@ export const ADMIN_PERMISSIONS: readonly AdminPermission[] = [
   "users.view",
   "users.manage",
   "analytics.view",
+  "payments.manage",
   "admins.manage",
 ];
 
@@ -60,6 +62,7 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
   "users.view": "View users",
   "users.manage": "Edit users",
   "analytics.view": "View analytics",
+  "payments.manage": "Manage payments and orders",
   "admins.manage": "Manage admins",
 };
 

@@ -74,17 +74,20 @@ export default function TermsPage() {
         </h2>
         <div className="mt-3 flex max-w-[60ch] flex-col gap-3 text-[13px] leading-relaxed text-[var(--color-ink-black)]">
           <p>
-            Pantaker is a marketplace for connecting buyers and sellers. It does
-            not process payments, hold funds, verify ownership, or arrange
-            delivery.
+            Pantaker connects buyers and sellers. Fixed-price listings can be
+            bought through Bachs checkout; Pantaker holds the seller&apos;s
+            share until handover and releases it 72 hours after collection
+            unless the buyer confirms sooner or raises an issue. Pantaker does
+            not verify ownership or arrange delivery.
           </p>
           <p>
-            Buyers and sellers agree the price, inspection, and handover
-            directly. Inspect before paying.
+            For off-platform sales, buyers and sellers agree the price,
+            inspection, and handover directly. Inspect before paying.
           </p>
           <p>
-            Do not use Pantaker messages to harass, spam, or send fraudulent
-            payment requests.
+            Payments, refunds, and disputes for protected orders are handled by
+            Bachs. Do not move a protected payment off Pantaker or use Pantaker
+            messages to harass, spam, or send fraudulent payment requests.
           </p>
         </div>
       </section>

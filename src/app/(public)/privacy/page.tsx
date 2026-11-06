@@ -36,13 +36,17 @@ export default function PrivacyPage() {
           </li>
           <li className="max-w-[60ch]">
             Profile details you choose to add, such as display name, username,
-            area, and bio.
+            area, bio, phone number, WhatsApp preference, and social handles.
           </li>
           <li className="max-w-[60ch]">
             Listings, photos, prices, and collection notes you publish.
           </li>
           <li className="max-w-[60ch]">
             Messages, reports, seller-recorded sales, and in-app notifications.
+          </li>
+          <li className="max-w-[60ch]">
+            Orders, payment status, payout account identifiers, refunds, and
+            dispute records for protected payments.
           </li>
           <li className="max-w-[60ch]">
             Account restrictions and admin audit records kept for safety and
@@ -61,12 +65,22 @@ export default function PrivacyPage() {
             coordinate.
           </p>
           <p>
+            To display the optional contact details you add — phone number,
+            WhatsApp status, and social handles — on your published listings.
+            Leave a field blank to keep it hidden.
+          </p>
+          <p>
             To review listings, handle reports, prevent abuse, and keep the
             marketplace safe.
           </p>
           <p>
             To send account and marketplace notifications you have not turned
             off.
+          </p>
+          <p>
+            To take protected payments through Bachs, hold the seller&apos;s
+            share until handover, pay sellers out, and handle refunds and
+            disputes.
           </p>
           <p>
             We do not sell personal data or run third-party advertising
@@ -93,6 +107,11 @@ export default function PrivacyPage() {
             Service providers host the app, database, email delivery, and
             listing photos: Supabase, our email provider, Cloudflare, and the
             deployment host. They process data on Pantaker&apos;s behalf.
+          </p>
+          <p>
+            Bachs processes protected payments, seller payout accounts, refunds,
+            and disputes. Payment card details are entered on Bachs&apos;
+            checkout and are not stored by Pantaker.
           </p>
         </div>
       </section>

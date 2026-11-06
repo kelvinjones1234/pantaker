@@ -13,10 +13,24 @@ export const NOTIFICATION_TYPES: readonly NotificationType[] = [
   "new_message",
   "sale_status_changed",
   "account_email_change",
+  "order_paid",
+  "order_ready",
+  "order_handover",
+  "order_released",
+  "order_refunded",
+  "order_disputed",
+  "order_cancelled",
+  "order_issue",
+  "order_payment_failed",
+  "order_expired",
 ] as const;
 
-/** The three switchable preference columns on `notification_preferences`. */
-export type NotificationPreferenceKey = "messages" | "sale_updates" | "listing_updates";
+/** The switchable preference columns on `notification_preferences`. */
+export type NotificationPreferenceKey =
+  | "messages"
+  | "sale_updates"
+  | "listing_updates"
+  | "order_updates";
 
 /**
  * Presentation metadata per event type, plus the preference that governs it.
@@ -34,6 +48,16 @@ export const NOTIFICATION_META: Record<
   new_message: { label: "Message", preference: "messages" },
   sale_status_changed: { label: "Sale update", preference: "sale_updates" },
   account_email_change: { label: "Account", preference: null },
+  order_paid: { label: "Order paid", preference: "order_updates" },
+  order_ready: { label: "Order ready", preference: "order_updates" },
+  order_handover: { label: "Handover recorded", preference: "order_updates" },
+  order_released: { label: "Order completed", preference: "order_updates" },
+  order_refunded: { label: "Order refunded", preference: "order_updates" },
+  order_disputed: { label: "Order dispute", preference: "order_updates" },
+  order_cancelled: { label: "Order cancelled", preference: "order_updates" },
+  order_issue: { label: "Order issue", preference: "order_updates" },
+  order_payment_failed: { label: "Payment failed", preference: "order_updates" },
+  order_expired: { label: "Checkout expired", preference: "order_updates" },
 };
 
 export function isNotificationType(value: unknown): value is NotificationType {
@@ -86,4 +110,12 @@ export function messageDedupeKey(messageId: string): string {
  */
 export function saleDedupeKey(saleId: string, status: string): string {
   return `sale:${saleId}:${status}`;
+}
+
+/**
+ * Dedupe key for an order notification. Each event notifies a recipient once,
+ * even when a provider webhook is retried.
+ */
+export function orderDedupeKey(orderId: string, event: string): string {
+  return `order:${orderId}:${event}`;
 }

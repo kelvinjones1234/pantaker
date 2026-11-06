@@ -121,7 +121,7 @@ export default async function AdminListingsPage({
       >
         <Link
           href="/admin"
-          className="inline-flex h-10 items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-[13px] font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
+          className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-[13px] font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
         >
           Back to admin
         </Link>
@@ -194,7 +194,7 @@ export default async function AdminListingsPage({
                 </p>
                 <Link
                   href="/admin/listings"
-                  className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-4 text-[13px] font-semibold text-[var(--color-pure-white)] transition-colors duration-150 hover:bg-[var(--color-primary-hover)]"
+                  className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-4 text-[13px] font-semibold text-[var(--color-pure-white)] transition-colors duration-150 hover:bg-[var(--color-primary-hover)]"
                 >
                   Clear filters
                 </Link>

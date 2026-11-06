@@ -17,6 +17,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   cancelLabel = "Cancel",
+  pendingLabel = "Working…",
   tone = "default",
   pending = false,
   onConfirm,
@@ -28,6 +29,7 @@ export function ConfirmDialog({
   description: string;
   confirmLabel: string;
   cancelLabel?: string;
+  pendingLabel?: string;
   tone?: "default" | "danger";
   pending?: boolean;
   onConfirm: () => void;
@@ -80,7 +82,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--overlay-ink-45)] p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--overlay-ink-45)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -91,7 +93,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="shop-card w-full max-w-md p-6"
+        className="shop-card max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain p-6"
       >
         <div className="flex items-start gap-3">
           {tone === "danger" && (
@@ -137,7 +139,7 @@ export function ConfirmDialog({
                 : "bg-[var(--color-shop-violet)] hover:bg-[var(--color-primary-hover)]",
             )}
           >
-            {pending ? "Working…" : confirmLabel}
+            {pending ? pendingLabel : confirmLabel}
           </button>
         </div>
       </div>

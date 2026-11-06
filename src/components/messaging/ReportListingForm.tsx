@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { reportListingAction } from "@/features/listings/actions";
+import { FieldSelect } from "@/components/ui/form-field";
 import { REPORT_REASONS } from "@/lib/validation/messaging";
 
 /** Report a listing. Reason and details are validated on the server. */
@@ -43,18 +44,18 @@ export function ReportListingForm({ listingId, isLive }: { listingId: string; is
         <label htmlFor="listing-report-reason" className="sr-only">
           Reason
         </label>
-        <select
+        <FieldSelect
           id="listing-report-reason"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
-          className="h-11 w-full cursor-pointer rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-[13px] text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+          className="sm:text-[13px]"
         >
           {REPORT_REASONS.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
           ))}
-        </select>
+        </FieldSelect>
         <label htmlFor="listing-report-details" className="sr-only">
           What is wrong
         </label>
@@ -65,7 +66,7 @@ export function ReportListingForm({ listingId, isLive }: { listingId: string; is
           rows={3}
           maxLength={2000}
           placeholder="What's wrong with this listing?"
-          className="resize-y rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 py-3 text-[13px] text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+          className="resize-y rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 py-3 text-base text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] sm:text-[13px]"
         />
         {error && (
           <p role="alert" className="text-[12px] text-[var(--color-error)]">
@@ -80,7 +81,7 @@ export function ReportListingForm({ listingId, isLive }: { listingId: string; is
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-full bg-[var(--color-ink-black)] px-5 text-[13px] font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-full bg-[var(--color-ink-black)] px-5 text-[13px] font-semibold text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
         >
           {isPending ? "Submitting…" : "Submit report"}
         </button>

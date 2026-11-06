@@ -22,6 +22,7 @@ import {
 } from "@/components/marketplace/browse-state";
 import type { CardListing } from "@/components/marketplace/ListingCard";
 import { ABUJA_AREAS, ALL_ABUJA } from "@/lib/areas";
+import { saveAreaPreference } from "@/features/location/client";
 import type { SampleGroup } from "@/lib/sample-data";
 
 const CONDITION_OPTIONS = [
@@ -119,6 +120,7 @@ export function ListingsBrowser({
   const apply = (partial: Partial<BrowseState>) => {
     const next: BrowseState = { ...stateRef.current, ...partial };
     if (!("page" in partial)) next.page = 1;
+    if ("area" in partial) saveAreaPreference(partial.area);
     setState(next);
     const key = buildSearchParams(next);
     pushedKey.current = key;
@@ -138,6 +140,7 @@ export function ListingsBrowser({
 
   const resetAll = () => {
     setQueryInput("");
+    saveAreaPreference(ALL_ABUJA);
     setState(EMPTY_BROWSE);
     pushedKey.current = "";
     startTransition(() => {
@@ -148,6 +151,7 @@ export function ListingsBrowser({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const activePrice = priceChipValue(state);
   const filtering = hasActiveFilters(state);
+  const areaLabel = state.area === ALL_ABUJA ? "Abuja" : `${state.area}, Abuja`;
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
@@ -160,23 +164,28 @@ export function ListingsBrowser({
               groups={groups}
               activeGroup={state.group}
               onSelectGroup={(slug) => apply({ group: slug })}
+              area={state.area}
             />
           </div>
         </aside>
 
         <div className="min-w-0 flex-1">
           <div className="mb-5 lg:hidden">
-            <CategoryRail categories={categories} activeSlug={activeSlug} />
+            <CategoryRail
+              categories={categories}
+              activeSlug={activeSlug}
+              area={state.area}
+            />
           </div>
 
           <header className="mb-5">
             <h1 className="font-brand-serif text-2xl font-semibold tracking-tight text-[var(--color-ink-black)] sm:text-3xl">
               {heading}
             </h1>
-            <p className="mt-1 max-w-2xl text-[13px] text-[var(--color-muted-gray)]">{description}</p>
-            <p className="mt-2 text-xs text-[var(--color-muted-gray)]" aria-live="polite">
+            <p className="mt-1 max-w-2xl text-[13px] text-[var(--color-ash-veil)]">{description}</p>
+            <p className="mt-2 text-xs text-[var(--color-ash-veil)]" aria-live="polite">
               {total} {total === 1 ? "item" : "items"}
-              {isLive ? " in Abuja" : " in this preview"}
+              {isLive ? ` in ${areaLabel}` : " in this preview"}
             </p>
           </header>
 
@@ -203,7 +212,7 @@ export function ListingsBrowser({
                   id="filter-area"
                   value={state.area}
                   onChange={(event) => apply({ area: event.target.value })}
-                  className="cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] py-1.5 pl-3.5 pr-9 text-xs font-medium text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)]"
+                  className="h-11 cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] py-1.5 pl-3.5 pr-9 text-base font-medium text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)] sm:h-auto sm:text-xs"
                 >
                   {ABUJA_AREAS.map((area) => (
                     <option key={area.name} value={area.name}>
@@ -222,7 +231,7 @@ export function ListingsBrowser({
                   id="filter-sort"
                   value={state.sort}
                   onChange={(event) => apply({ sort: event.target.value as BrowseState["sort"] })}
-                  className="cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] py-1.5 pl-3.5 pr-9 text-xs font-medium text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)]"
+                  className="h-11 cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] py-1.5 pl-3.5 pr-9 text-base font-medium text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-muted-gray)] sm:h-auto sm:text-xs"
                 >
                   <option value="newest">Sort: Newest</option>
                   <option value="price_asc">Price: Low to high</option>
@@ -239,7 +248,7 @@ export function ListingsBrowser({
                     onClick={() => apply({ view })}
                     aria-pressed={state.view === view}
                     aria-label={view === "grid" ? "Grid view" : "List view"}
-                    className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ${
+                    className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 sm:h-7 sm:w-7 ${
                       state.view === view
                         ? "bg-[var(--color-ink-black)] text-[var(--color-pure-white)]"
                         : "text-[var(--color-muted-gray)] hover:text-[var(--color-ink-black)]"
@@ -290,9 +299,27 @@ export function ListingsBrowser({
           </div>
 
           {items.length === 0 && !isPending ? (
-            <EmptyState onReset={resetAll} />
+            <EmptyState
+              heading={
+                state.area === ALL_ABUJA
+                  ? undefined
+                  : `No items in ${state.area} yet`
+              }
+              copy={
+                state.area === ALL_ABUJA
+                  ? undefined
+                  : `Try All Abuja, or be the first to list something in ${state.area}.`
+              }
+              onReset={resetAll}
+              resetLabel={
+                state.area === ALL_ABUJA ? "Reset all filters" : "Show all Abuja"
+              }
+            />
           ) : (
-            <ListingGrid items={items} view={state.view} pending={isPending} />
+            <>
+              <h2 className="sr-only">Listings</h2>
+              <ListingGrid items={items} view={state.view} pending={isPending} />
+            </>
           )}
 
           <Pagination page={state.page} totalPages={totalPages} onChange={(page) => apply({ page })} />

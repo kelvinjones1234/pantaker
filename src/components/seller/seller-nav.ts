@@ -3,6 +3,7 @@ import {
   ChatIcon,
   GearIcon,
   HomeIcon,
+  PackageIcon,
   ReceiptIcon,
   TagIcon,
   UserIcon,
@@ -23,12 +24,14 @@ export interface SellerNavItem {
   badgeKey?: "messages" | "notifications";
 }
 
-/** Navigation for the Seller Centre. Only routes that exist are listed. */
+/** Navigation for the Dashboard. Only routes that exist are listed. */
 export const SELLER_NAV: SellerNavItem[] = [
   { href: "/seller", label: "Overview", icon: HomeIcon, exact: true },
   { href: "/seller/listings", label: "My Listings", shortLabel: "Listings", icon: TagIcon },
   { href: "/seller/sales", label: "Sales", icon: ReceiptIcon },
+  { href: "/seller/orders", label: "Online orders", shortLabel: "Orders", icon: PackageIcon },
   { href: "/seller/messages", label: "Messages", icon: ChatIcon, badgeKey: "messages" },
+  { href: "/orders", label: "Purchases", icon: ReceiptIcon },
   // Notifications also reach the seller through the mobile header bell, so the
   // crowded dock omits it; it stays in the desktop rail.
   { href: "/notifications", label: "Notifications", icon: BellIcon, badgeKey: "notifications", hideOnMobile: true },

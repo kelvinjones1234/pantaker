@@ -106,7 +106,7 @@ export function MarketplaceBrowseSkeleton() {
         <div className="min-w-0 flex-1">
           <div className="mb-5 flex gap-2 overflow-hidden lg:hidden">
             {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-9 w-28 shrink-0 rounded-full" />
+              <Skeleton key={index} className="h-11 w-28 shrink-0 rounded-full" />
             ))}
           </div>
 
@@ -147,7 +147,7 @@ function QuickNavRailSkeleton() {
   return (
     <aside
       aria-hidden="true"
-      className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 md:flex"
+      className="pointer-events-none fixed left-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col items-center gap-3.5 lg:flex"
     >
       <div className="flex flex-col items-center gap-5 rounded-full bg-[var(--color-pure-white)] px-2.5 py-4">
         {Array.from({ length: 4 }).map((_, index) => (
@@ -165,7 +165,7 @@ function MobileQuickNavSkeleton() {
   return (
     <nav
       aria-hidden="true"
-      className="fixed inset-x-0 bottom-0 z-50 flex items-stretch gap-1 border-t border-[var(--color-faint-border)] bg-[var(--overlay-paper-95)] px-2 pt-2 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 flex items-stretch gap-1 border-t border-[var(--color-faint-border)] bg-[var(--overlay-paper-95)] px-2 pt-2 backdrop-blur-md lg:hidden"
       style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
     >
       {Array.from({ length: 5 }).map((_, index) => (
@@ -192,7 +192,7 @@ export function ListingDetailSkeleton() {
   return (
     <LoadingRegion
       label="Loading listing"
-      className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8 sm:px-6 md:pb-8 md:pl-24"
+      className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8 sm:px-6 lg:pb-8 lg:pl-24"
     >
       <QuickNavRailSkeleton />
 
@@ -506,7 +506,7 @@ export function ConversationSkeleton({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="shop-card flex min-h-[55vh] max-h-[70vh] flex-col p-4 sm:p-5">
+          <div className="shop-card flex min-h-[55dvh] max-h-[70dvh] flex-col p-4 sm:p-5">
             <div className="flex flex-1 flex-col gap-3 py-2">
               <Skeleton className="h-12 w-3/5 rounded-[20px]" />
               <Skeleton className="ml-auto h-16 w-2/3 rounded-[20px]" />
@@ -679,7 +679,7 @@ export function SellerListingsSkeleton() {
                   <Skeleton className="hidden h-3 w-28 sm:block" />
                 </div>
               </div>
-              <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+              <Skeleton className="h-11 w-11 shrink-0 rounded-full" />
             </div>
           </div>
         ))}
@@ -687,7 +687,7 @@ export function SellerListingsSkeleton() {
 
       <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
         <Skeleton className="h-3 w-48" />
-        <Skeleton className="h-9 w-44 rounded-full" />
+        <Skeleton className="h-11 w-44 rounded-full" />
       </div>
     </LoadingRegion>
   );
@@ -898,7 +898,7 @@ export function AdminTableSkeleton({
 
       {filters && (
         <div className="shop-card flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:min-w-[220px]">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-11 w-full rounded-full" />
           </div>
@@ -926,7 +926,7 @@ export function AdminTableSkeleton({
       {pagination && (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <Skeleton className="h-3 w-48" />
-          <Skeleton className="h-9 w-44 rounded-full" />
+          <Skeleton className="h-11 w-44 rounded-full" />
         </div>
       )}
     </div>
@@ -967,7 +967,7 @@ export function AdminCategoriesSkeleton() {
                 <Skeleton className="mt-2 h-3 w-1/2" />
                 <Skeleton className="mt-2 h-3 w-20" />
               </div>
-              <Skeleton className="h-9 w-28 shrink-0 rounded-full" />
+              <Skeleton className="h-11 w-28 shrink-0 rounded-full" />
             </div>
           ))}
         </div>
@@ -1045,7 +1045,7 @@ export function HomePageSkeleton() {
     >
       <QuickNavRailSkeleton />
 
-      <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 md:pl-24 md:pr-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 lg:pl-24 lg:pr-8">
         <header className="mb-8 flex w-full flex-col items-center">
           <div className="flex w-full flex-col gap-3 sm:min-h-[64px] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <Skeleton className="h-10 w-36" />
@@ -1173,7 +1173,7 @@ export function HomePageSkeleton() {
           </div>
         </section>
 
-        <footer className="mt-16 flex w-full flex-col items-center justify-between gap-4 border-t border-[var(--color-ink-06)] pb-12 pt-8 sm:flex-row">
+        <footer className="mt-16 flex w-full flex-col items-center justify-between gap-4 border-t border-[var(--color-ink-06)] pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-8 sm:flex-row lg:pb-8">
           <Skeleton className="h-3 w-64" />
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             {Array.from({ length: 6 }).map((_, index) => (

@@ -11,8 +11,8 @@ import {
 import type { AdminCategoryRecord } from "@/features/admin/category-rules";
 import {
   Field,
+  FieldSelect,
   fieldInputClass,
-  fieldSelectClass,
   fieldTextareaClass,
 } from "@/components/ui/form-field";
 import { slugify } from "@/lib/utils";
@@ -129,12 +129,11 @@ export function CategoryForm({
         error={errors.parent_id}
         hint="Leave empty for a top-level category. A category cannot sit inside its own descendant."
       >
-        <select
+        <FieldSelect
           id={parentId}
           name="parent_id"
           value={parent}
           onChange={(event) => setParent(event.target.value)}
-          className={fieldSelectClass}
           aria-invalid={Boolean(errors.parent_id?.length)}
         >
           <option value="">No parent (top level)</option>
@@ -143,7 +142,7 @@ export function CategoryForm({
               {indentLabel(option.name, option.depth)}
             </option>
           ))}
-        </select>
+        </FieldSelect>
       </Field>
 
       <Field

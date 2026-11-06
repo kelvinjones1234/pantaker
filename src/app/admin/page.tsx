@@ -43,6 +43,20 @@ const AVAILABLE_TOOLS: ReadonlyArray<{
     permission: "reports.manage",
   },
   {
+    label: "Orders",
+    detail:
+      "Review protected orders, disputes, refunds, and seller releases.",
+    href: "/admin/orders",
+    permission: "payments.manage",
+  },
+  {
+    label: "Webhooks",
+    detail:
+      "Check recent Bachs deliveries and investigate events that could not be applied.",
+    href: "/admin/webhooks",
+    permission: "payments.manage",
+  },
+  {
     label: "Accounts",
     detail:
       "Look up accounts and restrict, suspend, or restore access with an audit trail.",

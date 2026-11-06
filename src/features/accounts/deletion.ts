@@ -39,6 +39,59 @@ export async function deleteAccountCompletely(
       }
     }
 
+    const [openOrders, paymentAccount, payoutInFlight] = await Promise.all([
+      prisma.order.count({
+        where: {
+          OR: [{ buyer_id: userId }, { seller_id: userId }],
+          status: {
+            in: [
+              "pending_payment",
+              "held",
+              "ready_for_handover",
+              "handed_over",
+              "release_blocked",
+              "disputed",
+              "refund_pending",
+            ],
+          },
+        },
+      }),
+      prisma.sellerPaymentAccount.findUnique({
+        where: { user_id: userId },
+        select: { available_balance_kobo: true, pending_balance_kobo: true },
+      }),
+      prisma.sellerPayout.count({
+        where: {
+          seller_id: userId,
+          status: { in: ["pending", "processing"] },
+        },
+      }),
+    ]);
+    if (openOrders > 0) {
+      return {
+        ok: false,
+        error:
+          "This account has an order in progress. Finish or resolve it before deleting the account.",
+      };
+    }
+    if (
+      Number(paymentAccount?.available_balance_kobo ?? 0) > 0 ||
+      Number(paymentAccount?.pending_balance_kobo ?? 0) > 0
+    ) {
+      return {
+        ok: false,
+        error:
+          "Withdraw your remaining Bachs balance before deleting the account.",
+      };
+    }
+    if (payoutInFlight > 0) {
+      return {
+        ok: false,
+        error:
+          "A withdrawal is still processing. Wait for it to finish before deleting the account.",
+      };
+    }
+
     const [listings, profile] = await Promise.all([
       prisma.listing.findMany({
         where: { seller_id: userId },

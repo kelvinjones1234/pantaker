@@ -1,19 +1,68 @@
 import { describe, expect, it } from "vitest";
-import { emailOtpRequestSchema, emailOtpVerifySchema } from "@/lib/validation/auth";
+import {
+  emailOtpVerifySchema,
+  passwordLoginSchema,
+  signupRequestSchema,
+} from "@/lib/validation/auth";
 
-describe("email OTP request", () => {
+describe("sign-up request", () => {
+  const valid = {
+    email: "buyer@example.com",
+    password: "correct-horse",
+    confirmPassword: "correct-horse",
+  };
+
   it("accepts and trims a valid email", () => {
-    const result = emailOtpRequestSchema.safeParse({ email: "  buyer@example.com " });
+    const result = signupRequestSchema.safeParse({
+      ...valid,
+      email: "  buyer@example.com ",
+    });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.email).toBe("buyer@example.com");
   });
 
   it("rejects a malformed email", () => {
-    expect(emailOtpRequestSchema.safeParse({ email: "not-an-email" }).success).toBe(false);
+    expect(signupRequestSchema.safeParse({ ...valid, email: "not-an-email" }).success).toBe(false);
   });
 
-  it("rejects an empty email", () => {
-    expect(emailOtpRequestSchema.safeParse({ email: "" }).success).toBe(false);
+  it("rejects a password shorter than 8 characters", () => {
+    expect(
+      signupRequestSchema.safeParse({
+        ...valid,
+        password: "short",
+        confirmPassword: "short",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects mismatched passwords", () => {
+    const result = signupRequestSchema.safeParse({
+      ...valid,
+      confirmPassword: "different",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.confirmPassword).toContain(
+        "Passwords do not match.",
+      );
+    }
+  });
+});
+
+describe("password sign-in", () => {
+  it("accepts an email and any non-empty password", () => {
+    expect(
+      passwordLoginSchema.safeParse({
+        email: "buyer@example.com",
+        password: "x",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an empty password", () => {
+    expect(
+      passwordLoginSchema.safeParse({ email: "buyer@example.com", password: "" }).success,
+    ).toBe(false);
   });
 });
 

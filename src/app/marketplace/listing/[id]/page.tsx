@@ -22,6 +22,12 @@ import { StartConversationForm } from "@/components/messaging/StartConversationF
 import { CONDITION_LABELS } from "@/types/marketplace";
 import { ReportListingForm } from "@/components/messaging/ReportListingForm";
 import { ParticipantAvatar } from "@/components/messaging/ParticipantAvatar";
+import { SellerContactLinks } from "@/components/marketplace/SellerContactLinks";
+import { BuyNowButton } from "@/components/marketplace/BuyNowButton";
+import {
+  getBuyerOrderForListing,
+  getListingPurchaseState,
+} from "@/features/orders/queries";
 
 export async function generateMetadata({
   params,
@@ -54,10 +60,8 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [listing, user] = await Promise.all([
-    getListingDetail(id),
-    getAuthUser(),
-  ]);
+  const user = await getAuthUser().catch(() => null);
+  const listing = await getListingDetail(id, user?.id ?? null);
   if (!listing) notFound();
 
   const related = await getRelatedListings({
@@ -69,6 +73,21 @@ export default async function ListingDetailPage({
   const isOwner = Boolean(
     user && listing.seller_id && user.id === listing.seller_id,
   );
+  const [purchaseState, viewerOrder] = await Promise.all([
+    !listing.sample && listing.seller_id
+      ? getListingPurchaseState(listing.id, listing.seller_id)
+      : Promise.resolve(null),
+    user && !listing.sample
+      ? getBuyerOrderForListing(listing.id, user.id)
+      : Promise.resolve(null),
+  ]);
+  const canBuyOnline =
+    !isOwner &&
+    listing.item_status === "published" &&
+    listing.pricing_type === "fixed" &&
+    listing.price != null &&
+    listing.price > 0 &&
+    purchaseState?.available === true;
   const sellerName =
     listing.seller?.display_name ??
     (listing.seller?.username ? `@${listing.seller.username}` : "the seller");
@@ -78,7 +97,7 @@ export default async function ListingDetailPage({
   const hasRelated = related.seller.length > 0 || related.similar.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8 sm:px-6 md:pb-8 md:pl-24">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8 sm:px-6 lg:pb-8 lg:pl-24">
       <ListingQuickNav user={user} category={listing.category} />
 
       <nav
@@ -262,6 +281,16 @@ export default async function ListingDetailPage({
               </p>
             )}
 
+            {listing.seller && (
+              <SellerContactLinks
+                contact={listing.seller}
+                availableChannels={listing.seller.available_channels}
+                isAuthenticated={Boolean(user)}
+                isOwner={isOwner}
+                listingId={listing.id}
+              />
+            )}
+
             <div className="mt-5">
               {isOwner ? (
                 <div className="flex flex-col gap-2">
@@ -276,26 +305,68 @@ export default async function ListingDetailPage({
                   </Link>
                 </div>
               ) : canContact ? (
-                user ? (
-                  <StartConversationForm
-                    listingId={listing.id}
-                    sellerName={sellerName}
-                    isLive={isAuthConfigured()}
-                  />
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    <p className="text-[12px] leading-relaxed text-[var(--color-ash-veil)]">
-                      Sign in to message the seller. Your conversation is kept
-                      on your Pantaker account, not in this browser.
-                    </p>
-                    <Link
-                      href={`/login?next=/marketplace/listing/${listing.id}`}
-                      className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-5 text-sm font-semibold text-[var(--color-pure-white)] transition-colors duration-200 hover:bg-[var(--color-primary-hover)]"
-                    >
-                      Sign in to message
-                    </Link>
-                  </div>
-                )
+                <div className="flex flex-col gap-4">
+                  {viewerOrder ? (
+                    viewerOrder.status === "pending_payment" ? (
+                      <div className="flex flex-col gap-2">
+                        <Link
+                          href={`/checkout/${listing.id}`}
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-5 text-sm font-semibold text-[var(--color-pure-white)] transition-colors duration-200 hover:bg-[var(--color-primary-hover)]"
+                        >
+                          Resume checkout
+                        </Link>
+                        <p className="text-center text-[11px] leading-relaxed text-[var(--color-muted-gray)]">
+                          Your checkout is still open. Finish payment to hold this item.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <Link
+                          href={`/orders/${viewerOrder.id}`}
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[var(--color-shop-violet)] px-5 text-sm font-semibold text-[var(--color-pure-white)] transition-colors duration-200 hover:bg-[var(--color-primary-hover)]"
+                        >
+                          View your order
+                        </Link>
+                        <p className="text-center text-[11px] leading-relaxed text-[var(--color-muted-gray)]">
+                          You already have an order for this item.
+                        </p>
+                      </div>
+                    )
+                  ) : canBuyOnline ? (
+                    <BuyNowButton
+                      listingId={listing.id}
+                      priceLabel={pricingLabel(listing.pricing_type, listing.price)}
+                    />
+                  ) : (
+                    listing.pricing_type === "fixed" &&
+                    purchaseState?.reason && (
+                      <p className="rounded-[16px] bg-[var(--color-canvas-mist)] px-4 py-3 text-[12px] leading-relaxed text-[var(--color-ash-veil)]">
+                        {purchaseState.reason}
+                      </p>
+                    )
+                  )}
+
+                  {user ? (
+                    <StartConversationForm
+                      listingId={listing.id}
+                      sellerName={sellerName}
+                      isLive={isAuthConfigured()}
+                    />
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-[12px] leading-relaxed text-[var(--color-ash-veil)]">
+                        Sign in or create an account to message the seller and
+                        track any purchase.
+                      </p>
+                      <Link
+                        href={`/login?next=${encodeURIComponent(`/marketplace/listing/${listing.id}`)}`}
+                        className="inline-flex min-h-11 items-center justify-center rounded-full hover:bg-[var(--color-canvas-mist)] px-5 text-sm font-semibold text-[var(--color-ink-black)] transition-colors duration-200 bg-[var(--color-primary-tint)]"
+                      >
+                        Sign in to buy or message
+                      </Link>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="text-[12px] leading-relaxed text-[var(--color-ash-veil)]">
                   This listing is no longer available for enquiries.

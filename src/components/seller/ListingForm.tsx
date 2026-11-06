@@ -17,13 +17,13 @@ import { ABUJA_AREAS, ALL_ABUJA } from "@/lib/areas";
 import { CONDITION_LABELS, PRICING_LABELS } from "@/types/marketplace";
 
 const inputClass =
-  "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
+  "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
 
 const selectClass =
-  "h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
+  "h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
 
 const textareaClass =
-  "w-full rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
+  "w-full rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-4 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
 
 const labelClass =
   "block text-xs font-semibold text-[var(--color-ink-black)] mb-1.5";
@@ -115,6 +115,7 @@ export function ListingForm({
   listingId,
   initial,
   defaults,
+  onlinePaymentsActive = false,
 }: {
   mode: "create" | "edit";
   categories: ListingFormCategory[];
@@ -124,6 +125,8 @@ export function ListingForm({
   initial?: ListingFormInitial;
   /** Seller settings defaults applied to new listings (create mode only). */
   defaults?: { area?: string | null; pickup_notes?: string | null };
+  /** Whether Bachs transfers are active, so fixed-price listings get checkout. */
+  onlinePaymentsActive?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const submittingRef = useRef(false);
@@ -486,6 +489,20 @@ export function ListingForm({
           )}
         </div>
 
+        {pricingType === "fixed" && !onlinePaymentsActive && (
+          <p className="rounded-[16px] bg-[var(--color-canvas-mist)] px-4 py-3 text-[12px] leading-relaxed text-[var(--color-ash-veil)]">
+            Buyers will not see online checkout until your Bachs payouts are
+            active.{" "}
+            <Link
+              href="/seller/settings/payments"
+              className="font-semibold text-[var(--color-shop-violet)]"
+            >
+              Set up payments
+            </Link>
+            .
+          </p>
+        )}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor={quantityId} className={labelClass}>
@@ -611,7 +628,7 @@ export function ListingForm({
             type="button"
             onClick={() => runSave("publish")}
             disabled={isPending || uploading}
-            className="inline-flex h-[52px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--color-shop-violet)] px-6 text-sm font-semibold text-[var(--color-pure-white)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex h-[52px] py-4 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--color-shop-violet)] px-6 text-sm font-semibold text-[var(--color-pure-white)] transition hover:bg-[var(--color-primary-hover)] disabled:cursor-wait disabled:opacity-60"
           >
             {isPending
               ? "Saving…"

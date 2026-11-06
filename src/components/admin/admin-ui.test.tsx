@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AdminActionMenu } from "@/components/admin/AdminActionMenu";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { AdminPagination } from "@/components/admin/AdminPagination";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, FieldError } from "@/components/ui/form-field";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Timestamp } from "@/components/ui/timestamp";

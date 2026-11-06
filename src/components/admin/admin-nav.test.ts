@@ -17,12 +17,15 @@ describe("adminNavFor", () => {
       "users.view",
       "users.manage",
       "analytics.view",
+      "payments.manage",
       "admins.manage",
     ]).map((item) => item.href);
 
     expect(hrefs).toContain("/admin/admins");
     expect(hrefs).toContain("/admin/deletion-requests");
-    expect(hrefs).toHaveLength(7);
+    expect(hrefs).toContain("/admin/orders");
+    expect(hrefs).toContain("/admin/webhooks");
+    expect(hrefs).toHaveLength(9);
   });
 
   it("hides permission-gated sections a moderator cannot use", () => {
@@ -32,6 +35,8 @@ describe("adminNavFor", () => {
     expect(hrefs).toContain("/admin/accounts");
     expect(hrefs).not.toContain("/admin/admins");
     expect(hrefs).not.toContain("/admin/deletion-requests");
+    expect(hrefs).not.toContain("/admin/orders");
+    expect(hrefs).not.toContain("/admin/webhooks");
   });
 });
 

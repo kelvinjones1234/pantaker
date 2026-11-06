@@ -4,6 +4,7 @@ import type { NavCategory } from "@/components/marketplace/CategoryNav";
 import type { CardListing } from "@/components/marketplace/ListingCard";
 import { paginationDefaults } from "@/config/site";
 import { ALL_ABUJA } from "@/lib/areas";
+import { getSavedArea } from "@/features/location/preference";
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
@@ -33,18 +34,22 @@ export async function loadBrowse(
   categorySlug: string,
   raw: RawSearchParams,
 ): Promise<BrowseData> {
-  const state = stateFromParams({
-    q: one(raw.q),
-    group: one(raw.group),
-    condition: one(raw.condition),
-    pricing: one(raw.pricing),
-    area: one(raw.area),
-    minPrice: one(raw.minPrice),
-    maxPrice: one(raw.maxPrice),
-    sort: one(raw.sort),
-    view: one(raw.view),
-    page: one(raw.page),
-  });
+  const savedArea = await getSavedArea();
+  const state = stateFromParams(
+    {
+      q: one(raw.q),
+      group: one(raw.group),
+      condition: one(raw.condition),
+      pricing: one(raw.pricing),
+      area: one(raw.area),
+      minPrice: one(raw.minPrice),
+      maxPrice: one(raw.maxPrice),
+      sort: one(raw.sort),
+      view: one(raw.view),
+      page: one(raw.page),
+    },
+    savedArea,
+  );
 
   const [{ items, total, live }, rawCategories] = await Promise.all([
     searchListings({
@@ -90,8 +95,13 @@ export async function loadBrowse(
     groups,
     heading: active ? active.name : "All recoverable items",
     description: active
-      ? active.description || `Recoverable ${active.name.toLowerCase()} from around Abuja.`
-      : "Browse scrap, spares, and reusable goods posted by people and businesses around Abuja.",
+      ? active.description ||
+        (state.area === ALL_ABUJA
+          ? `Recoverable ${active.name.toLowerCase()} from around Abuja.`
+          : `Recoverable ${active.name.toLowerCase()} in ${state.area}, Abuja.`)
+      : state.area === ALL_ABUJA
+        ? "Browse scrap, spares, and reusable goods posted by people and businesses around Abuja."
+        : `Browse scrap, spares, and reusable goods posted by people and businesses in ${state.area}, Abuja.`,
     isCategory: Boolean(active),
   };
 }

@@ -24,7 +24,7 @@ export default async function SellerInboxPage() {
       >
         <Link
           href="/messages"
-          className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--color-canvas-mist)] px-4 text-xs font-semibold text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-primary-tint)]"
         >
           Buying messages
         </Link>

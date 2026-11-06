@@ -66,6 +66,15 @@ describe("requireSeller", () => {
     expect(redirectMock).toHaveBeenCalledWith("/login?next=%2Fseller%2Flistings");
   });
 
+  it("redirects guests visiting /sell to sign in when auth is configured", async () => {
+    configureAuth();
+    vi.stubEnv("NODE_ENV", "production");
+    getUserMock.mockResolvedValue(null);
+
+    await expect(requireSeller("/sell")).rejects.toThrow("NEXT_REDIRECT");
+    expect(redirectMock).toHaveBeenCalledWith("/login?next=%2Fsell");
+  });
+
   it("stays in preview (no redirect) only when unconfigured or preview is allowed", async () => {
     vi.stubEnv("NODE_ENV", "development");
     getUserMock.mockResolvedValue(null);

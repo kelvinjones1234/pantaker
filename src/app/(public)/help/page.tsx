@@ -36,13 +36,19 @@ export default function HelpPage() {
             message.
           </p>
           <p>
-            Agree the price, quantity, and collection point in the conversation.
-            Inspect the item before you pay, and meet in a public place during
-            daylight where possible.
+            Fixed-price listings can be bought with Pantaker checkout. Pantaker
+            holds the seller&apos;s share until you collect the item, then pays
+            the seller 72 hours later unless you confirm receipt sooner or raise
+            an issue.
           </p>
           <p>
-            Pantaker does not process payments, hold funds, or arrange delivery.
-            A sale is recorded by the seller after the handover is agreed.
+            For other items, agree the price, quantity, and collection point in
+            the conversation. Inspect the item before you pay, and meet in a
+            public place during daylight where possible.
+          </p>
+          <p>
+            Pantaker does not arrange delivery. Never send money outside the
+            checkout for a protected order.
           </p>
         </div>
       </section>
@@ -59,6 +65,11 @@ export default function HelpPage() {
           <p>
             New and edited listings are reviewed before they appear in the
             marketplace.
+          </p>
+          <p>
+            To sell a fixed-price listing online, finish Bachs payout onboarding
+            in seller settings. Pantaker releases your share after the buyer
+            collects the item.
           </p>
           <p>
             Keep conversations and handover arrangements inside Pantaker

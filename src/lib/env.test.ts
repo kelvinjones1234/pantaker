@@ -4,6 +4,7 @@ import { productionConfigError } from "@/lib/env";
 const KEYS = [
   "DATABASE_URL",
   "AUTH_SECRET",
+  "PICKUP_CODE_SECRET",
   "NEXT_PUBLIC_SITE_URL",
   "NEXT_PUBLIC_SUPPORT_EMAIL",
   "EMAIL_SERVER_HOST",
@@ -16,12 +17,16 @@ const KEYS = [
   "CLOUDFLARE_R2_SECRET_KEY",
   "CLOUDFLARE_R2_BUCKET_ENDPOINT",
   "NEXT_PUBLIC_R2_PUBLIC_DOMAIN",
+  "BACHS_SECRET_KEY",
+  "BACHS_WEBHOOK_SECRET",
+  "CRON_SECRET",
 ] as const;
 
 function setProductionEnv(siteUrl = "https://pantaker.example") {
   vi.stubEnv("NODE_ENV", "production");
   vi.stubEnv("DATABASE_URL", "postgresql://user:pass@db.example.com:5432/pantaker");
   vi.stubEnv("AUTH_SECRET", "test-secret");
+  vi.stubEnv("PICKUP_CODE_SECRET", "pickup-test-secret");
   vi.stubEnv("EMAIL_SERVER_HOST", "smtp.example.com");
   vi.stubEnv("EMAIL_SERVER_USER", "mailer@pantaker.example");
   vi.stubEnv("EMAIL_SERVER_PASSWORD", "app-password");
@@ -37,6 +42,9 @@ function setProductionEnv(siteUrl = "https://pantaker.example") {
     "https://test-account.r2.cloudflarestorage.com",
   );
   vi.stubEnv("NEXT_PUBLIC_R2_PUBLIC_DOMAIN", "https://images.example.com");
+  vi.stubEnv("BACHS_SECRET_KEY", "sk_sandbox_test");
+  vi.stubEnv("BACHS_WEBHOOK_SECRET", "whsec_test");
+  vi.stubEnv("CRON_SECRET", "cron-test-secret");
 }
 
 afterEach(() => {
@@ -78,6 +86,22 @@ describe("productionConfigError", () => {
     expect(productionConfigError()).toMatch(/CLOUDFLARE_R2_SECRET_KEY/);
     expect(productionConfigError()).toMatch(/CLOUDFLARE_R2_BUCKET_ENDPOINT/);
     expect(productionConfigError()).toMatch(/NEXT_PUBLIC_R2_PUBLIC_DOMAIN/);
+  });
+
+  it("blocks production when payments are not configured", () => {
+    setProductionEnv();
+    vi.stubEnv("BACHS_SECRET_KEY", "");
+    vi.stubEnv("BACHS_WEBHOOK_SECRET", "");
+    vi.stubEnv("CRON_SECRET", "");
+    expect(productionConfigError()).toMatch(/BACHS_SECRET_KEY/);
+    expect(productionConfigError()).toMatch(/BACHS_WEBHOOK_SECRET/);
+    expect(productionConfigError()).toMatch(/CRON_SECRET/);
+  });
+
+  it("requires a dedicated pickup code secret in production", () => {
+    setProductionEnv();
+    vi.stubEnv("PICKUP_CODE_SECRET", "");
+    expect(productionConfigError()).toMatch(/PICKUP_CODE_SECRET/);
   });
 
   it("accepts a fully configured production environment", () => {

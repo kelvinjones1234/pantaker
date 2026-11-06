@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { SELLER_NAV, isSellerNavActive } from "@/components/seller/seller-nav";
 
 /**
- * Persistent left rail for the Seller Centre (desktop). The active item fills
+ * Persistent left rail for the Dashboard (desktop). The active item fills
  * with the mist canvas at a 20px radius, matching the Shop sidebar spec.
  */
 export function SellerSidebar({
@@ -41,7 +41,7 @@ export function SellerSidebar({
         <Logo />
       </Link>
 
-      <nav aria-label="Seller Centre" className="flex flex-col gap-1">
+      <nav aria-label="Dashboard" className="flex flex-col gap-1">
         {SELLER_NAV.map((item) => {
           const active = isSellerNavActive(pathname, item);
           const Icon = item.icon;

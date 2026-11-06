@@ -10,6 +10,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   messages: true,
   sale_updates: true,
   listing_updates: true,
+  order_updates: true,
   updated_at: "",
 };
 

@@ -31,19 +31,19 @@ function fromAddress(): string {
   return `Pantaker <${support}>`;
 }
 
-export async function sendLoginCodeEmail(to: string, code: string): Promise<void> {
+export async function sendSignupCodeEmail(to: string, code: string): Promise<void> {
   await transport().sendMail({
     from: fromAddress(),
     to,
-    subject: "Your Pantaker sign-in code",
+    subject: "Your Pantaker verification code",
     text: [
-      `Your Pantaker sign-in code is ${code}.`,
+      `Your Pantaker verification code is ${code}.`,
       "",
-      "It expires in 10 minutes. If you did not ask for this code, you can ignore this email.",
+      "Enter it to finish creating your account. It expires in 10 minutes. If you did not ask for this code, you can ignore this email.",
     ].join("\n"),
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1a1a1a;max-width:480px;margin:0 auto;padding:24px">
-        <p style="margin:0 0 16px;font-size:14px">Use this code to sign in to Pantaker:</p>
+        <p style="margin:0 0 16px;font-size:14px">Use this code to finish creating your Pantaker account:</p>
         <p style="margin:0 0 20px;font-size:32px;font-weight:700;letter-spacing:0.25em">${code}</p>
         <p style="margin:0;font-size:14px;color:#555">The code expires in 10 minutes. If you did not ask for it, you can ignore this email.</p>
       </div>

@@ -10,7 +10,7 @@ import { LAUNCH_CITY, NIGERIAN_CITIES } from "@/lib/cities";
 import { cn } from "@/lib/utils";
 
 const inputClass =
-  "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
+  "h-[52px] w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]";
 
 const labelClass = "block text-xs font-semibold text-[var(--color-ink-black)] mb-1.5";
 
@@ -23,6 +23,12 @@ export interface ProfileFormInitial {
   city: string;
   area: string;
   bio: string;
+  phone: string;
+  phone_is_whatsapp: boolean;
+  instagram_handle: string;
+  x_handle: string;
+  facebook_handle: string;
+  tiktok_handle: string;
   avatarId?: string;
   avatarUrl?: string;
 }
@@ -30,6 +36,47 @@ export interface ProfileFormInitial {
 function FieldError({ messages }: { messages?: string[] }) {
   if (!messages?.length) return null;
   return <p className="mt-1.5 text-xs text-[var(--color-error)]">{messages[0]}</p>;
+}
+
+function SocialHandleField({
+  id,
+  name,
+  label,
+  maxLength,
+  defaultValue,
+  error,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  maxLength: number;
+  defaultValue: string;
+  error?: string[];
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className={labelClass}>
+        {label}{" "}
+        <span className="font-normal text-[var(--color-muted-gray)]">(optional)</span>
+      </label>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[var(--color-muted-gray)]">
+          @
+        </span>
+        <input
+          id={id}
+          name={name}
+          type="text"
+          maxLength={maxLength}
+          defaultValue={defaultValue}
+          aria-invalid={Boolean(error)}
+          placeholder="yourhandle"
+          className={`${inputClass} pl-8`}
+        />
+      </div>
+      <FieldError messages={error} />
+    </div>
+  );
 }
 
 export function ProfileForm({
@@ -53,6 +100,8 @@ export function ProfileForm({
   const [username, setUsername] = useState(initial.username);
   const [bio, setBio] = useState(initial.bio);
   const [area, setArea] = useState(initial.area);
+  const [phone, setPhone] = useState(initial.phone);
+  const [isWhatsapp, setIsWhatsapp] = useState(initial.phone_is_whatsapp);
   const [hasAvatar, setHasAvatar] = useState(Boolean(initial.avatarId));
 
   const displayNameId = useId();
@@ -61,6 +110,12 @@ export function ProfileForm({
   const cityId = useId();
   const areaId = useId();
   const bioId = useId();
+  const phoneId = useId();
+  const whatsappId = useId();
+  const instagramId = useId();
+  const xId = useId();
+  const facebookId = useId();
+  const tiktokId = useId();
 
   const checklist = [
     { label: "Display name", done: displayName.trim().length >= 2 },
@@ -105,8 +160,8 @@ export function ProfileForm({
           Your seller profile
         </h2>
         <p className="mt-1 text-[12px] leading-relaxed text-[var(--color-muted-gray)]">
-          This is your storefront identity on Pantaker. We don&apos;t collect or publish contact
-          details, so nothing private is shown to buyers.
+          This is your storefront identity on Pantaker. Contact details are optional — add them
+          only if you want buyers to reach you outside the marketplace.
         </p>
 
         <div className="mt-5">
@@ -131,7 +186,7 @@ export function ProfileForm({
                   name="account_type"
                   value={accountType}
                   onChange={(event) => setAccountType(event.target.value)}
-                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
                 >
                   <option value="individual">Individual seller</option>
                   <option value="business">Business</option>
@@ -202,7 +257,7 @@ export function ProfileForm({
                       : LAUNCH_CITY
                   }
                   aria-invalid={Boolean(fieldErrors.city)}
-                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]"
+                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]"
                 >
                   {NIGERIAN_CITIES.map((city) => (
                     <option key={city.name} value={city.name} disabled={!city.supported}>
@@ -226,7 +281,7 @@ export function ProfileForm({
                   name="area"
                   value={area}
                   onChange={(event) => setArea(event.target.value)}
-                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
+                  className="h-[52px] w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-11 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]"
                 >
                   <option value="">No area selected</option>
                   {AREA_OPTIONS.map((option) => (
@@ -254,9 +309,113 @@ export function ProfileForm({
               onChange={(event) => setBio(event.target.value)}
               aria-invalid={Boolean(fieldErrors.bio)}
               placeholder="Tell buyers what you sell or salvage."
-              className="w-full rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]"
+              className="w-full rounded-[20px] border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] p-4 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)] aria-[invalid=true]:border-[var(--color-error)]"
             />
             <FieldError messages={fieldErrors.bio} />
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-[var(--color-faint-border)] pt-5">
+          <h3 className="text-sm font-semibold text-[var(--color-ink-black)]">
+            Contact and socials
+          </h3>
+          <p className="mt-1 text-[12px] leading-relaxed text-[var(--color-muted-gray)]">
+            Optional. Whatever you add here appears on every published listing so buyers can reach
+            you directly. Leave a field blank to hide it.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-5">
+            <div>
+              <label htmlFor={phoneId} className={labelClass}>
+                Phone number{" "}
+                <span className="font-normal text-[var(--color-muted-gray)]">(optional)</span>
+              </label>
+              <input
+                id={phoneId}
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                maxLength={32}
+                value={phone}
+                onChange={(event) => {
+                  setPhone(event.target.value);
+                  if (!event.target.value.trim()) setIsWhatsapp(false);
+                }}
+                aria-invalid={Boolean(fieldErrors.phone)}
+                placeholder="+234 803 000 0000"
+                className={inputClass}
+              />
+              <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-muted-gray)]">
+                Include the country code so WhatsApp links work, e.g. +234 803 000 0000.
+              </p>
+              <FieldError messages={fieldErrors.phone} />
+            </div>
+
+            <label
+              htmlFor={whatsappId}
+              className={cn(
+                "flex items-center justify-between gap-4 rounded-[20px] bg-[var(--color-canvas-mist)] px-4 py-3",
+                phone.trim() ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+              )}
+            >
+              <span className="min-w-0">
+                <span className="block text-[13px] font-semibold text-[var(--color-ink-black)]">
+                  This number is on WhatsApp
+                </span>
+                <span className="mt-0.5 block text-[12px] leading-relaxed text-[var(--color-muted-gray)]">
+                  Adds a WhatsApp button to your listings.
+                </span>
+              </span>
+              <span className="relative inline-flex shrink-0">
+                <input
+                  id={whatsappId}
+                  type="checkbox"
+                  name="phone_is_whatsapp"
+                  value="true"
+                  checked={isWhatsapp && Boolean(phone.trim())}
+                  onChange={(event) => setIsWhatsapp(event.target.checked)}
+                  disabled={!phone.trim()}
+                  className="peer sr-only"
+                />
+                <span className="h-6 w-11 rounded-full bg-[var(--color-cool-stone)] transition-colors duration-150 peer-checked:bg-[var(--color-shop-violet)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-shop-violet)] peer-focus-visible:ring-offset-2" />
+                <span className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[var(--color-pure-white)] shadow-none transition-transform duration-150 peer-checked:translate-x-5" />
+              </span>
+            </label>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <SocialHandleField
+                id={instagramId}
+                name="instagram_handle"
+                label="Instagram"
+                maxLength={30}
+                defaultValue={initial.instagram_handle}
+                error={fieldErrors.instagram_handle}
+              />
+              <SocialHandleField
+                id={xId}
+                name="x_handle"
+                label="X (Twitter)"
+                maxLength={15}
+                defaultValue={initial.x_handle}
+                error={fieldErrors.x_handle}
+              />
+              <SocialHandleField
+                id={facebookId}
+                name="facebook_handle"
+                label="Facebook"
+                maxLength={50}
+                defaultValue={initial.facebook_handle}
+                error={fieldErrors.facebook_handle}
+              />
+              <SocialHandleField
+                id={tiktokId}
+                name="tiktok_handle"
+                label="TikTok"
+                maxLength={24}
+                defaultValue={initial.tiktok_handle}
+                error={fieldErrors.tiktok_handle}
+              />
+            </div>
           </div>
         </div>
 

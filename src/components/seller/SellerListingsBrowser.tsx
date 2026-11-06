@@ -7,11 +7,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pagination } from "@/components/marketplace/Pagination";
 import { SellerEmptyState } from "@/components/seller/SellerEmptyState";
 import { SellerStatusPill } from "@/components/seller/SellerStatusPill";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/toast";
 import { CaretDownIcon, MoreIcon, PackageIcon, PlusIcon, SearchIcon } from "@/components/brand/icons";
 import { deleteListingAction, updateListingStatusAction } from "@/features/listings/actions";
 import { canDelete, canEdit, transitionsFrom } from "@/features/listings/lifecycle";
-import { SELLER_STATUS_FILTERS } from "@/lib/listing-status";
+import { listingStatusMeta, SELLER_STATUS_FILTERS } from "@/lib/listing-status";
 import { pricingLabel, timeAgo } from "@/lib/utils";
 import type { ItemStatus } from "@/types/marketplace";
 
@@ -46,10 +48,10 @@ const SORT_OPTIONS = [
 ];
 
 const inputClass =
-  "h-11 w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]";
+  "h-11 w-full rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] px-4 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 placeholder:text-[var(--color-muted-gray)] hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]";
 
 const selectClass =
-  "h-11 w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-10 text-sm text-[var(--color-ink-black)] outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]";
+  "h-11 w-full cursor-pointer appearance-none rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] pl-4 pr-10 text-base text-[var(--color-ink-black)] sm:text-sm outline-none transition-colors duration-150 hover:border-[var(--color-ink-30)] focus:border-[var(--color-shop-violet)]";
 
 function SelectShell({ children }: { children: React.ReactNode }) {
   return (
@@ -112,8 +114,12 @@ export function SellerListingsBrowser({
   const pathname = usePathname();
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [isMutating, setIsMutating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SellerListingView | null>(null);
   const [search, setSearch] = useState(filters.q);
+  const { toast } = useToast();
+  const busy = isPending || isMutating;
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasFilters = Boolean(filters.q || filters.status || filters.category || filters.sort !== "newest");
@@ -132,29 +138,50 @@ export function SellerListingsBrowser({
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
-  const runAction = (
-    fn: () => Promise<{ ok: true } | { ok: false; error: string }>,
-    onError: (message: string) => void,
-  ) => {
-    startTransition(async () => {
-      const res = await fn();
-      if (!res.ok) {
-        onError(res.error || "Something went wrong.");
-        return;
-      }
-      router.refresh();
+  const changeStatus = async (listing: SellerListingView, to: ItemStatus) => {
+    if (isMutating) return;
+    setOpenId(null);
+    setIsMutating(true);
+    const result = await updateListingStatusAction(listing.id, to);
+    setIsMutating(false);
+    if (!result.ok) {
+      toast({
+        tone: "error",
+        title: "Could not update listing",
+        description: result.error || "Something went wrong. Try again.",
+      });
+      return;
+    }
+    const label = listingStatusMeta(to)?.label ?? "updated";
+    toast({
+      tone: "success",
+      title: "Listing updated",
+      description: `“${listing.title}” is now ${label.toLowerCase()}.`,
     });
+    startTransition(() => router.refresh());
   };
 
-  const changeStatus = (id: string, to: ItemStatus) => {
-    setOpenId(null);
-    runAction(() => updateListingStatusAction(id, to), (message) => window.alert(message || "Could not update status."));
-  };
-
-  const removeListing = (id: string) => {
-    setOpenId(null);
-    if (!window.confirm("Delete this listing? This cannot be undone.")) return;
-    runAction(() => deleteListingAction(id), (message) => window.alert(message || "Could not delete listing."));
+  const confirmDelete = async () => {
+    const target = deleteTarget;
+    if (!target || isMutating) return;
+    setIsMutating(true);
+    const result = await deleteListingAction(target.id);
+    setIsMutating(false);
+    setDeleteTarget(null);
+    if (!result.ok) {
+      toast({
+        tone: "error",
+        title: "Could not delete listing",
+        description: result.error || "Something went wrong. Try again.",
+      });
+      return;
+    }
+    toast({
+      tone: "success",
+      title: "Listing deleted",
+      description: `“${target.title}” has been removed from Pantaker.`,
+    });
+    startTransition(() => router.refresh());
   };
 
   if (isFirstRun) {
@@ -269,7 +296,7 @@ export function SellerListingsBrowser({
         </div>
       </div>
 
-      {isPending ? (
+      {busy ? (
         <SellerListingRowsSkeleton />
       ) : items.length === 0 ? (
         <SellerEmptyState
@@ -288,7 +315,7 @@ export function SellerListingsBrowser({
           </button>
         </SellerEmptyState>
       ) : (
-        <ul className="flex flex-col gap-2.5" aria-busy={isPending}>
+        <ul className="flex flex-col gap-2.5" aria-busy={busy}>
           {items.map((listing) => {
             const transitions = transitionsFrom(listing.status);
             const deletable = canDelete(listing.status);
@@ -338,7 +365,7 @@ export function SellerListingsBrowser({
                       aria-label={`Manage ${listing.title}`}
                       aria-expanded={menuOpen}
                       onClick={() => setOpenId(menuOpen ? null : listing.id)}
-                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
+                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[var(--color-faint-border)] bg-[var(--color-pure-white)] text-[var(--color-ink-black)] transition-colors duration-150 hover:border-[var(--color-ink-30)]"
                     >
                       <MoreIcon className="h-4 w-4" />
                     </button>
@@ -346,7 +373,7 @@ export function SellerListingsBrowser({
                     {menuOpen && (
                       <div
                         role="menu"
-                        className="absolute right-0 z-20 mt-1 w-56 rounded-[20px] bg-[var(--color-pure-white)] p-1.5 shadow-[var(--shadow-lg)]"
+                        className="absolute right-0 z-20 mt-1 w-56 max-w-[calc(100vw-2rem)] rounded-[20px] bg-[var(--color-pure-white)] p-1.5 shadow-[var(--shadow-lg)]"
                       >
                         {editable && (
                           <Link
@@ -373,7 +400,7 @@ export function SellerListingsBrowser({
                             key={transition.to}
                             role="menuitem"
                             type="button"
-                            onClick={() => changeStatus(listing.id, transition.to)}
+                            onClick={() => changeStatus(listing, transition.to)}
                             className="block w-full cursor-pointer rounded-[14px] px-3 py-2 text-left text-[13px] font-medium text-[var(--color-ink-black)] transition-colors duration-150 hover:bg-[var(--color-canvas-mist)]"
                           >
                             {transition.label}
@@ -383,7 +410,10 @@ export function SellerListingsBrowser({
                           <button
                             role="menuitem"
                             type="button"
-                            onClick={() => removeListing(listing.id)}
+                            onClick={() => {
+                              setOpenId(null);
+                              setDeleteTarget(listing);
+                            }}
                             className="block w-full cursor-pointer rounded-[14px] px-3 py-2 text-left text-[13px] font-medium text-[var(--color-error)] transition-colors duration-150 hover:bg-[var(--color-error-bg)]"
                           >
                             Delete listing
@@ -399,7 +429,7 @@ export function SellerListingsBrowser({
         </ul>
       )}
 
-      {total > 0 && !isPending && (
+      {total > 0 && !busy && (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <p className="text-[12px] text-[var(--color-ash-veil)]">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total} listings
@@ -411,6 +441,24 @@ export function SellerListingsBrowser({
           />
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this listing?"
+        description={
+          deleteTarget
+            ? `“${deleteTarget.title}” will be permanently removed from Pantaker. This cannot be undone. If an order or sale is still active, resolve it first.`
+            : ""
+        }
+        confirmLabel="Delete listing"
+        pendingLabel="Deleting…"
+        tone="danger"
+        pending={isMutating}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!isMutating) setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

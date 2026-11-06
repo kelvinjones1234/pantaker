@@ -1,4 +1,4 @@
-import { ALL_ABUJA } from "@/lib/areas";
+import { ALL_ABUJA, parseArea } from "@/lib/areas";
 
 export type BrowseSort = "newest" | "price_asc" | "price_desc";
 export type BrowseView = "grid" | "list";
@@ -52,18 +52,21 @@ function toNumber(value: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function stateFromParams(params: {
-  q?: string;
-  group?: string;
-  condition?: string;
-  pricing?: string;
-  area?: string;
-  minPrice?: string | number | null;
-  maxPrice?: string | number | null;
-  sort?: string;
-  view?: string;
-  page?: string | number | null;
-}): BrowseState {
+export function stateFromParams(
+  params: {
+    q?: string;
+    group?: string;
+    condition?: string;
+    pricing?: string;
+    area?: string;
+    minPrice?: string | number | null;
+    maxPrice?: string | number | null;
+    sort?: string;
+    view?: string;
+    page?: string | number | null;
+  },
+  defaultArea: string = ALL_ABUJA,
+): BrowseState {
   const sort = params.sort;
   const view = params.view;
   const pricing = params.pricing;
@@ -74,7 +77,7 @@ export function stateFromParams(params: {
     pricing: (["fixed", "negotiable", "free", "offer"].includes(pricing ?? "")
       ? pricing
       : "") as BrowsePricing,
-    area: params.area || ALL_ABUJA,
+    area: parseArea(params.area) ?? parseArea(defaultArea) ?? ALL_ABUJA,
     minPrice: toNumber(params.minPrice == null ? null : String(params.minPrice)),
     maxPrice: toNumber(params.maxPrice == null ? null : String(params.maxPrice)),
     sort: sort === "price_asc" || sort === "price_desc" ? sort : "newest",
