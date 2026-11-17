@@ -16,7 +16,7 @@ function hrefFor(slug: string, area?: string): string {
 }
 
 function categoryClass(isActive: boolean): string {
-  return `flex cursor-pointer flex-col rounded-2xl px-3 py-2.5 outline-none transition-colors duration-150 ${
+  return `flex cursor-pointer flex-col rounded-2xl pr-3 py-2.5 outline-none transition-colors duration-150 ${
     isActive
       ? "bg-[var(--color-canvas-mist)]"
       : "hover:bg-[var(--color-canvas-mist)]"
@@ -41,7 +41,7 @@ export function CategorySidebar({
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label="Categories" className="flex flex-col gap-0.5">
-        <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-stone-warm)]">
+        <p className="pr-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-stone-warm)]">
           Categories
         </p>
         <Link href={hrefFor("", area)} className={categoryClass(activeSlug === "")}>
@@ -80,7 +80,7 @@ export function CategorySidebar({
 
       {groups.length > 0 && onSelectGroup && (
         <div className="flex flex-col gap-0.5">
-          <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-stone-warm)]">
+          <p className="pr-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-stone-warm)]">
             Filter by type
           </p>
           <button

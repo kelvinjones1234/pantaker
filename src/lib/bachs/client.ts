@@ -69,10 +69,13 @@ export interface BachsPayoutDestination {
   id: string;
   type?: string;
   currency?: string;
+  status?: "pending_review" | "approved" | "rejected";
   is_usable?: boolean;
   is_default?: boolean;
+  bank_code?: string | null;
   bank_name?: string | null;
   account_name?: string | null;
+  account_number?: string | null;
   account_number_last4?: string | null;
 }
 
@@ -174,6 +177,7 @@ export async function createConnectedAccount(input: {
           capabilities: {
             transfers: { requested: true },
             payouts: { requested: true },
+            conversions: { requested: true },
           },
         },
       },
@@ -263,11 +267,112 @@ export async function createRefund(input: {
 export async function listPayoutDestinations(
   accountId: string,
 ): Promise<BachsPayoutDestination[]> {
-  const response = await request<{
-    items?: BachsPayoutDestination[];
-    data?: BachsPayoutDestination[];
-  }>("/v1/payouts/destinations", { accountId });
-  return response.items ?? response.data ?? [];
+  const response = await request<
+    | BachsPayoutDestination[]
+    | {
+        items?: BachsPayoutDestination[];
+        data?: BachsPayoutDestination[];
+        destinations?: BachsPayoutDestination[];
+      }
+  >("/v1/payouts/destinations", { accountId });
+  const list = Array.isArray(response)
+    ? response
+    : (response?.items ?? response?.data ?? response?.destinations);
+  if (!Array.isArray(list)) {
+    // Logged with keys only, never values, so no account data reaches the logs.
+    console.error(
+      "Unexpected Bachs payout destinations response shape.",
+      Array.isArray(response) ? "array" : Object.keys(response ?? {}),
+    );
+    return [];
+  }
+  return list;
+}
+
+/** Makes an existing destination the default for its currency (the one payouts use). */
+export async function setDefaultPayoutDestination(input: {
+  accountId: string;
+  destinationId: string;
+}): Promise<BachsPayoutDestination> {
+  return request<BachsPayoutDestination>(
+    `/v1/payouts/destinations/${encodeURIComponent(input.destinationId)}`,
+    {
+      method: "PATCH",
+      accountId: input.accountId,
+      body: { is_default: true },
+    },
+  );
+}
+
+/** Removes a destination once nothing should pay out to it. */
+export async function deletePayoutDestination(input: {
+  accountId: string;
+  destinationId: string;
+}): Promise<void> {
+  await request<unknown>(
+    `/v1/payouts/destinations/${encodeURIComponent(input.destinationId)}`,
+    { method: "DELETE", accountId: input.accountId },
+  );
+}
+
+export interface BachsBank {
+  name: string;
+  code: string;
+}
+
+export interface BachsResolvedAccount {
+  resolved: boolean;
+  account_name: string | null;
+  account_number: string | null;
+  message: string | null;
+}
+
+/** Bank list for a country, used to pick the `bank_code` for a payout account. */
+export async function listBanks(country = "NG"): Promise<BachsBank[]> {
+  const response = await request<{ banks?: BachsBank[] }>(
+    `/v1/reference/banks?country=${encodeURIComponent(country)}`,
+  );
+  return response.banks ?? [];
+}
+
+/** Confirms that an account number belongs to the named account holder. */
+export async function resolveBankAccount(input: {
+  accountNumber: string;
+  bankCode: string;
+  country?: string;
+}): Promise<BachsResolvedAccount> {
+  return request<BachsResolvedAccount>("/v1/misc/bank-accounts/resolve", {
+    method: "POST",
+    body: {
+      account_number: input.accountNumber,
+      bank_code: input.bankCode,
+      country: input.country ?? "NG",
+    },
+  });
+}
+
+export async function createPayoutDestination(input: {
+  accountId: string;
+  accountNumber: string;
+  accountName: string;
+  bankCode: string;
+  bankName: string;
+  idempotencyKey: string;
+}): Promise<BachsPayoutDestination> {
+  return request<BachsPayoutDestination>("/v1/payouts/destinations", {
+    method: "POST",
+    accountId: input.accountId,
+    idempotencyKey: input.idempotencyKey,
+    body: {
+      type: "bank_account",
+      currency: "NGN",
+      name: input.accountName,
+      account_number: input.accountNumber,
+      account_name: input.accountName,
+      bank_code: input.bankCode,
+      bank_name: input.bankName,
+    },
+  });
 }
 
 export async function createPayout(input: {

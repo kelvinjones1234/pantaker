@@ -12,12 +12,21 @@ import {
 } from "@/features/payments/seller-accounts";
 import {
   createPayout,
+  createPayoutDestination,
+  deletePayoutDestination,
   getBalances,
+  listBanks,
   listPayoutDestinations,
+  resolveBankAccount,
+  setDefaultPayoutDestination,
 } from "@/lib/bachs/client";
 import { amountToKobo, koboToAmount } from "@/lib/bachs/money";
 import { getPrisma } from "@/lib/prisma";
 import { withUserContext } from "@/lib/db/context";
+import {
+  isSameBankAccount,
+  usableNgnDestinations,
+} from "@/features/payments/payout-destinations";
 
 export type PaymentActionResult =
   | { ok: true; message?: string; url?: string }
@@ -59,6 +68,121 @@ export async function refreshPaymentAccountAction(): Promise<PaymentActionResult
         error instanceof Error
           ? error.message
           : "Could not refresh your Bachs account.",
+    };
+  }
+}
+
+export async function linkSellerBankAccountAction(
+  formData: FormData,
+): Promise<PaymentActionResult> {
+  const user = await requireUserForAction("/seller/settings/payments");
+  const access = await checkAccountCanWrite();
+  if (!access.ok) return { ok: false, error: access.error };
+
+  const account = await getSellerPaymentAccount(user.id);
+  if (!account) return { ok: false, error: "Start Bachs onboarding first." };
+
+  const accountNumber = String(formData.get("account_number") ?? "").replace(/\s+/g, "");
+  const bankCode = String(formData.get("bank_code") ?? "").trim();
+  if (!/^\d{10}$/.test(accountNumber)) {
+    return { ok: false, error: "Enter the 10-digit account number." };
+  }
+  if (!bankCode) return { ok: false, error: "Choose your bank." };
+
+  try {
+    const banks = await listBanks("NG");
+    const bank = banks.find((item) => item.code === bankCode);
+    if (!bank) return { ok: false, error: "Choose a bank from the list." };
+
+    const resolved = await resolveBankAccount({ accountNumber, bankCode, country: "NG" });
+    const accountName = resolved.account_name?.trim() ?? "";
+    if (!resolved.resolved || !accountName) {
+      return {
+        ok: false,
+        error:
+          resolved.message?.trim() ||
+          "Bachs could not confirm this account. Check the number and bank.",
+      };
+    }
+
+    // Existing NGN destinations are the seller's previous payout accounts.
+    const existing = (await listPayoutDestinations(account.bachs_account_id)).filter(
+      (item) => (item.currency ?? "NGN") === "NGN",
+    );
+    if (
+      existing.some(
+        (item) => item.is_usable && isSameBankAccount(item, accountNumber, bankCode),
+      )
+    ) {
+      return { ok: false, error: "That is already your payout account." };
+    }
+    if (existing.length > 0) {
+      // Old destinations are removed on switch, so no withdrawal may still be in flight.
+      const inFlight = await getPrisma().sellerPayout.count({
+        where: { seller_id: user.id, status: { in: ["pending", "processing"] } },
+      });
+      if (inFlight > 0) {
+        return {
+          ok: false,
+          error: "Wait for your current withdrawal to finish, then switch accounts.",
+        };
+      }
+    }
+
+    const created = await createPayoutDestination({
+      accountId: account.bachs_account_id,
+      accountNumber,
+      accountName,
+      bankCode,
+      bankName: bank.name,
+      idempotencyKey: `seller-bank-${account.bachs_account_id}-${randomUUID()}`,
+    });
+
+    const approved = created.is_usable === true || created.status === "approved";
+    if (!approved) {
+      revalidatePath("/seller/settings/payments");
+      return {
+        ok: true,
+        message: `Saved ${bank.name} account for ${accountName}. Bachs is reviewing it before it can receive withdrawals.`,
+      };
+    }
+
+    // The new account becomes the one withdrawals use, then the old ones are removed.
+    await setDefaultPayoutDestination({
+      accountId: account.bachs_account_id,
+      destinationId: created.id,
+    });
+    let oldRemoved = true;
+    for (const old of existing) {
+      if (old.id === created.id) continue;
+      try {
+        await deletePayoutDestination({
+          accountId: account.bachs_account_id,
+          destinationId: old.id,
+        });
+      } catch (error) {
+        oldRemoved = false;
+        console.error("Could not remove an old Bachs payout destination.", error);
+      }
+    }
+
+    // The destination is saved at this point; a failed status refresh is not a link failure.
+    await refreshSellerPaymentAccount(account).catch(() => undefined);
+    revalidatePath("/seller/settings/payments");
+    const removedNote = oldRemoved
+      ? ""
+      : " Your previous account could not be removed, but withdrawals now go to the new one.";
+    return {
+      ok: true,
+      message: `Linked ${bank.name} account for ${accountName}.${removedNote}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Could not link your bank account. Try again shortly.",
     };
   }
 }

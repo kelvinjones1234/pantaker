@@ -10,10 +10,19 @@ import {
 import { SettingsCard, SettingsRow } from "@/components/seller/SettingsCard";
 import { SellerPageHeader } from "@/components/seller/SellerPageHeader";
 import {
+  BankAccountForm,
+  PayoutAccount,
   PayoutForm,
   RefreshPaymentStatusButton,
   StartOnboardingButton,
+  type BankOption,
 } from "@/components/seller/PaymentsPanel";
+import {
+  maskedAccountNumber,
+  primaryDestination,
+  usableNgnDestinations,
+} from "@/features/payments/payout-destinations";
+import { listBanks } from "@/lib/bachs/client";
 import { formatAdminDateTime } from "@/lib/datetime";
 
 export const metadata: Metadata = { title: "Payments — Pantaker" };
@@ -31,15 +40,30 @@ export default async function PaymentSettingsPage() {
   const configured = isBachsConfigured();
   const status = configured && user ? await loadSellerPaymentStatus(user.id) : null;
   const account = status?.account ?? null;
-  const [destinations, payouts] = await Promise.all([
+  const [destinationsResult, payouts] = await Promise.all([
     account && configured
       ? loadSellerDestinations(account.bachs_account_id)
-      : Promise.resolve([]),
+      : Promise.resolve({ ok: true as const, destinations: [] }),
     user ? getSellerPayouts(user.id) : Promise.resolve([]),
   ]);
-  const usableDestinations = destinations.filter(
-    (item) => item.is_usable && (item.currency ?? "NGN") === "NGN",
-  );
+  const destinationsError = destinationsResult.ok
+    ? null
+    : destinationsResult.error;
+  const primary = primaryDestination(destinationsResult.destinations);
+  const needsBankAccount =
+    Boolean(account) && configured && !destinationsError && !primary;
+  const showBankForm = Boolean(account) && configured && !destinationsError;
+  let banks: BankOption[] = [];
+  if (showBankForm) {
+    try {
+      banks = (await listBanks("NG")).map((bank) => ({
+        name: bank.name,
+        code: bank.code,
+      }));
+    } catch {
+      banks = [];
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,11 +107,36 @@ export default async function PaymentSettingsPage() {
                 <SettingsRow
                   label="Bank account"
                   value={
-                    usableDestinations.length > 0
-                      ? `${usableDestinations[0].bank_name ?? "Bank"} · ${usableDestinations[0].account_number_last4 ? `••••${usableDestinations[0].account_number_last4}` : "linked"}`
-                      : "Not linked yet"
+                    destinationsError
+                      ? "Could not load"
+                      : primary
+                        ? [
+                            primary.bank_name ?? "Bank",
+                            primary.account_name,
+                            maskedAccountNumber(primary) ?? "linked",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")
+                        : "Not linked yet"
                   }
                 />
+                {destinationsError && (
+                  <p className="mt-3 text-[12px] leading-relaxed text-[var(--color-error)]">
+                    {destinationsError}
+                  </p>
+                )}
+                {needsBankAccount && (
+                  <div className="mt-6 flex flex-col gap-3">
+                    <p className="text-[13px] font-semibold text-[var(--color-ink-black)]">
+                      Link your bank account
+                    </p>
+                    <p className="text-[12px] leading-relaxed text-[var(--color-ash-veil)]">
+                      Withdrawals go to a Nigerian bank account in your name.
+                    </p>
+                    <BankAccountForm banks={banks} />
+                  </div>
+                )}
+
                 {account.last_error && (
                   <p className="mt-3 text-[12px] leading-relaxed text-[var(--color-error)]">
                     Last check failed: {account.last_error}
@@ -117,6 +166,31 @@ export default async function PaymentSettingsPage() {
             )}
           </SettingsCard>
 
+          {account && primary && (
+            <SettingsCard
+              title="Payout account"
+              description="Withdrawals are sent to this bank account in your name."
+            >
+              <PayoutAccount
+                bankName={
+                  primary.bank_name ??
+                  banks.find((bank) => bank.code === primary.bank_code)?.name ??
+                  "Bank"
+                }
+                accountName={primary.account_name ?? null}
+                maskedNumber={maskedAccountNumber(primary)}
+                note={
+                  primary.is_usable
+                    ? null
+                    : primary.status === "rejected"
+                      ? "Bachs rejected this account. Switch to another one to receive withdrawals."
+                      : "Bachs is reviewing this account. Withdrawals use it once approved."
+                }
+                banks={banks}
+              />
+            </SettingsCard>
+          )}
+
           {account && (
             <SettingsCard
               title="Withdrawals"
@@ -124,9 +198,10 @@ export default async function PaymentSettingsPage() {
             >
               <PayoutForm
                 availableKobo={Number(account.available_balance_kobo)}
-                destinations={usableDestinations}
+                destinations={usableNgnDestinations(destinationsResult.destinations)}
                 canWithdraw={
-                  account.payouts_status === "active" && usableDestinations.length > 0
+                  account.payouts_status === "active" &&
+                  usableNgnDestinations(destinationsResult.destinations).length > 0
                 }
               />
             </SettingsCard>

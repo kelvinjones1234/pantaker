@@ -1,19 +1,17 @@
 import Link from "next/link";
 import {
-  GridIcon,
   HomeIcon,
+  InfoIcon,
+  MarketplaceIcon,
   TagIcon,
-  WrenchIcon,
 } from "@/components/brand/icons";
 import {
   MobileProfileLink,
   MobileQuickNav,
   mobileNavItemClass,
   QuickNavRail,
+  railItemClass,
 } from "@/components/marketplace/QuickNavRail";
-
-const actionClass =
-  "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)]";
 
 export function ListingQuickNav({
   user = null,
@@ -25,27 +23,27 @@ export function ListingQuickNav({
   return (
     <>
       <QuickNavRail user={user}>
-        <Link href="/" aria-label="Pantaker home" className={actionClass}>
-          <HomeIcon className="h-[22px] w-[22px]" />
+        <Link href="/" aria-label="Pantaker home" className={railItemClass}>
+          <HomeIcon className="h-[21px] w-[21px]" />
         </Link>
         <Link
           href="/marketplace"
           aria-label="Browse marketplace"
-          className={actionClass}
+          className={railItemClass}
         >
-          <GridIcon className="h-[21px] w-[21px]" />
+          <MarketplaceIcon className="h-[21px] w-[21px]" />
         </Link>
         {category && (
           <Link
             href={`/marketplace/${category.slug}`}
             aria-label={`Browse ${category.name}`}
-            className={actionClass}
+            className={railItemClass}
           >
             <TagIcon className="h-[21px] w-[21px]" />
           </Link>
         )}
-        <Link href="/#how" aria-label="How it works" className={actionClass}>
-          <WrenchIcon className="h-[21px] w-[21px]" />
+        <Link href="/#how" aria-label="How it works" className={railItemClass}>
+          <InfoIcon className="h-[21px] w-[21px]" />
         </Link>
       </QuickNavRail>
 
@@ -59,8 +57,8 @@ export function ListingQuickNav({
           aria-label="Browse marketplace"
           className={mobileNavItemClass}
         >
-          <GridIcon className="h-5 w-5" />
-          <span>Browse</span>
+          <MarketplaceIcon className="h-5 w-5" />
+          <span>Pantaker</span>
         </Link>
         {category && (
           <Link
@@ -77,7 +75,7 @@ export function ListingQuickNav({
           aria-label="How it works"
           className={mobileNavItemClass}
         >
-          <WrenchIcon className="h-5 w-5" />
+          <InfoIcon className="h-5 w-5" />
           <span>How</span>
         </Link>
         <MobileProfileLink user={user} />

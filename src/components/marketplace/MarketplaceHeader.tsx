@@ -48,7 +48,7 @@ export function MarketplaceHeader({
           <form
             role="search"
             onSubmit={submit}
-            className="order-last flex h-11 w-full min-w-0 flex-none items-center gap-2 rounded-full border border-[var(--color-ink-10)] bg-[var(--color-pure-white)] pl-4 pr-1 transition-colors focus-within:border-[var(--color-muted-gray)] sm:order-none sm:h-12 sm:w-auto sm:flex-1"
+            className="order-last flex h-14 w-full min-w-0 flex-none items-center gap-2 rounded-full border border-[var(--color-ink-10)] bg-[var(--color-pure-white)] pl-4 pr-1 transition-colors focus-within:border-[var(--color-muted-gray)] sm:order-none sm:w-auto sm:flex-1"
           >
             <SearchIcon className="h-4 w-4 shrink-0 text-[var(--color-muted-gray)]" />
             <label htmlFor="market-search" className="sr-only">

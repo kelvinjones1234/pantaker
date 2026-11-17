@@ -87,9 +87,9 @@ export function MarketplaceBrowseSkeleton() {
   return (
     <LoadingRegion
       label="Loading marketplace listings"
-      className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8"
+      className="mx-auto w-full max-w-[1072px] px-4 py-6 sm:px-6 sm:py-8"
     >
-      <div className="lg:flex lg:gap-8">
+      <div className="lg:flex lg:gap-6">
         <aside className="hidden lg:block lg:w-56 lg:shrink-0">
           <div className="sticky top-24 flex flex-col gap-2">
             <Skeleton className="mb-1 h-3 w-20" />
@@ -1063,24 +1063,24 @@ export function HomePageSkeleton() {
           </div>
         </header>
 
-        <section className="relative flex min-h-[460px] w-full items-center overflow-hidden rounded-[28px] bg-[var(--color-slate-ink)]">
-          <div className="flex w-full flex-col items-center justify-between gap-10 p-8 md:p-12 lg:flex-row lg:p-14">
-            <div className="flex w-full max-w-xl flex-1 flex-col gap-8 self-stretch">
+        <section className="relative flex min-h-[520px] w-full items-center overflow-hidden rounded-[28px] bg-[var(--color-slate-ink)] lg:h-[490px]">
+          <div className="flex h-full w-full flex-col justify-between gap-8 p-8 md:p-10 lg:flex-row lg:items-center lg:p-12">
+            <div className="flex w-full max-w-xl flex-1 flex-col justify-between self-stretch">
               <div>
                 <Skeleton className="h-3 w-40 bg-[var(--overlay-paper-40)]" />
                 <Skeleton className="mt-3 h-6 w-28 rounded-full bg-[var(--overlay-paper-40)]" />
               </div>
-              <div className="my-4 flex flex-col gap-3">
-                <Skeleton className="h-12 w-4/5 rounded-[10px] bg-[var(--overlay-paper-40)] sm:h-14" />
+              <div className="my-6 flex min-h-[140px] flex-col justify-center gap-3 sm:min-h-[155px] md:my-8">
+                <Skeleton className="h-10 w-4/5 rounded-[10px] bg-[var(--overlay-paper-40)] sm:h-12" />
                 <Skeleton className="h-7 w-48 rounded-[8px] bg-[var(--overlay-paper-40)]" />
               </div>
-              <Skeleton className="h-10 w-32 rounded-full bg-[var(--overlay-paper-40)]" />
+              <Skeleton className="h-11 w-32 rounded-full bg-[var(--overlay-paper-40)]" />
             </div>
-            <div className="grid w-full shrink-0 grid-cols-2 gap-3 lg:w-[460px] xl:w-[490px]">
+            <div className="grid w-full shrink-0 grid-cols-2 gap-3 lg:w-[460px]">
               {Array.from({ length: 4 }).map((_, index) => (
                 <Skeleton
                   key={index}
-                  className="aspect-[4/4.5] w-full rounded-[20px] bg-[var(--overlay-paper-40)]"
+                  className="h-[155px] w-full rounded-[20px] bg-[var(--overlay-paper-40)] sm:h-[180px] lg:h-[185px] lg:w-[224px]"
                 />
               ))}
             </div>
@@ -1107,7 +1107,7 @@ export function HomePageSkeleton() {
             </div>
             <Skeleton className="h-3 w-16" />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
               <ProductCardSkeleton key={index} />
             ))}
@@ -1125,7 +1125,7 @@ export function HomePageSkeleton() {
               <Skeleton className="h-9 w-28 rounded-full" />
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, index) => (
               <ProductCardSkeleton key={index} />
             ))}

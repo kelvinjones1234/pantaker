@@ -23,7 +23,9 @@ import {
   HammerIcon,
   HomeIcon,
   GridIcon,
+  InfoIcon,
   MapPinIcon,
+  MarketplaceIcon,
   PackageIcon,
   PlugIcon,
   PlusIcon,
@@ -41,6 +43,7 @@ import {
   MobileQuickNav,
   mobileNavItemClass,
   QuickNavRail,
+  railItemClass,
 } from "@/components/marketplace/QuickNavRail";
 import { ConditionBadge } from "@/components/ui/badge";
 import { FieldSelect } from "@/components/ui/form-field";
@@ -660,6 +663,54 @@ export function ShopLandingPage({
     featured.length > 0 ? featured[featureIndex % featured.length] : null;
   const curated = initialItems.slice(0, 4);
 
+  const [isFeaturePaused, setIsFeaturePaused] = useState(false);
+
+  // Auto-advance featured slide calmly every 5.5s unless hovered, focused, or hidden
+  useEffect(() => {
+    if (featured.length <= 1 || isFeaturePaused) return;
+
+    const timer = setInterval(() => {
+      setFeatureIndex((prev) => (prev + 1) % featured.length);
+    }, 5500);
+
+    return () => clearInterval(timer);
+  }, [featured.length, isFeaturePaused, featureIndex]);
+
+  // Pause autoplay when document tab is hidden
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      setIsFeaturePaused(document.hidden);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
+  const [activeSection, setActiveSection] = useState<"top" | "feed" | "how">(
+    "top",
+  );
+
+  // Synchronize active nav state with user scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 240;
+      const howEl = document.getElementById("how");
+      const feedEl = document.getElementById("feed");
+
+      if (howEl && scrollPos >= howEl.offsetTop) {
+        setActiveSection("how");
+      } else if (feedEl && scrollPos >= feedEl.offsetTop) {
+        setActiveSection("feed");
+      } else {
+        setActiveSection("top");
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const countForSlug = (slug: string) => categoryCounts[slug] ?? 0;
 
   const departmentsRef = useRef<HTMLElement>(null);
@@ -739,35 +790,48 @@ export function ShopLandingPage({
       <QuickNavRail user={user}>
         <button
           type="button"
-          onClick={() => scrollToId("top")}
+          onClick={() => {
+            scrollToId("top");
+            setActiveSection("top");
+          }}
           aria-label="Home"
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-ink-black)] transition-colors duration-200 hover:bg-[var(--color-canvas-mist)]"
+          aria-current={activeSection === "top" ? "page" : undefined}
+          data-active={activeSection === "top"}
+          className={railItemClass}
         >
-          <HomeIcon className="h-[22px] w-[22px]" />
+          <HomeIcon className="h-[21px] w-[21px]" />
         </button>
+        <Link
+          href="/marketplace"
+          aria-label="Marketplace"
+          data-active={false}
+          className={railItemClass}
+        >
+          <MarketplaceIcon className="h-[21px] w-[21px]" />
+        </Link>
         <button
           type="button"
-          onClick={() => scrollToId("departments")}
-          aria-label="Departments"
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:text-[var(--color-ink-black)]"
-        >
-          <GridIcon className="h-[21px] w-[21px]" />
-        </button>
-        <button
-          type="button"
-          onClick={() => scrollToId("feed")}
+          onClick={() => {
+            scrollToId("feed");
+            setActiveSection("feed");
+          }}
           aria-label="Marketplace feed"
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:text-[var(--color-ink-black)]"
+          data-active={activeSection === "feed"}
+          className={railItemClass}
         >
           <TagIcon className="h-[21px] w-[21px]" />
         </button>
         <button
           type="button"
-          onClick={() => scrollToId("how")}
+          onClick={() => {
+            scrollToId("how");
+            setActiveSection("how");
+          }}
           aria-label="How it works"
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:text-[var(--color-ink-black)]"
+          data-active={activeSection === "how"}
+          className={railItemClass}
         >
-          <WrenchIcon className="h-[21px] w-[21px]" />
+          <InfoIcon className="h-[21px] w-[21px]" />
         </button>
       </QuickNavRail>
 
@@ -775,25 +839,35 @@ export function ShopLandingPage({
       <MobileQuickNav>
         <button
           type="button"
-          onClick={() => scrollToId("top")}
+          onClick={() => {
+            scrollToId("top");
+            setActiveSection("top");
+          }}
+          aria-label="Home"
+          aria-current={activeSection === "top" ? "page" : undefined}
+          data-active={activeSection === "top"}
           className={mobileNavItemClass}
         >
           <HomeIcon className="h-5 w-5" />
           <span>Home</span>
         </button>
-        <button
-          type="button"
-          onClick={() => scrollToId("departments")}
-          aria-label="Browse departments"
+        <Link
+          href="/marketplace"
+          aria-label="Marketplace"
+          data-active={false}
           className={mobileNavItemClass}
         >
-          <GridIcon className="h-5 w-5" />
-          <span>Shop</span>
-        </button>
+          <MarketplaceIcon className="h-5 w-5" />
+          <span>Market</span>
+        </Link>
         <button
           type="button"
-          onClick={() => scrollToId("feed")}
+          onClick={() => {
+            scrollToId("feed");
+            setActiveSection("feed");
+          }}
           aria-label="Marketplace feed"
+          data-active={activeSection === "feed"}
           className={mobileNavItemClass}
         >
           <TagIcon className="h-5 w-5" />
@@ -801,11 +875,15 @@ export function ShopLandingPage({
         </button>
         <button
           type="button"
-          onClick={() => scrollToId("how")}
+          onClick={() => {
+            scrollToId("how");
+            setActiveSection("how");
+          }}
           aria-label="How it works"
+          data-active={activeSection === "how"}
           className={mobileNavItemClass}
         >
-          <WrenchIcon className="h-5 w-5" />
+          <InfoIcon className="h-5 w-5" />
           <span>How</span>
         </button>
         <MobileProfileLink user={user} />
@@ -1015,53 +1093,82 @@ export function ShopLandingPage({
         {activeFeature && (
           <section
             aria-label="Featured find"
-            className="relative flex min-h-[460px] w-full items-center overflow-hidden rounded-[28px] bg-[var(--color-slate-ink)]"
+            onMouseEnter={() => setIsFeaturePaused(true)}
+            onMouseLeave={() => setIsFeaturePaused(false)}
+            onFocusCapture={() => setIsFeaturePaused(true)}
+            onBlurCapture={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget)) {
+                setIsFeaturePaused(false);
+              }
+            }}
+            className="relative flex min-h-[520px] w-full items-center overflow-hidden rounded-[28px] bg-[var(--color-slate-ink)] lg:h-[490px]"
           >
-            {activeFeature.image && (
-              <div className="absolute inset-0 z-0" aria-hidden="true">
-                <StorageImage
-                  src={activeFeature.image}
-                  alt=""
-                  fill
-                  priority
-                  sizes="100vw"
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-[var(--overlay-ink-60)]" />
-              </div>
-            )}
-            <div className="relative z-10 flex w-full flex-col items-center justify-between gap-10 p-8 md:p-12 lg:flex-row lg:p-14">
-              <div className="flex max-w-xl flex-1 flex-col justify-between self-stretch text-[var(--color-pure-white)]">
-                <div>
-                  <div className="text-[13px] font-medium leading-tight tracking-wide text-[var(--ink-on-dark-95)]">
-                    Featured find ·{" "}
-                    {activeFeature.category ?? "Recoverable item"}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[var(--ink-on-dark-85)]">
-                    <ConditionBadge
-                      value={activeFeature.condition}
-                      className="border-[var(--overlay-paper-border-20)] bg-[var(--overlay-paper-10)] text-[var(--color-pure-white)]"
+            {/* Smooth crossfading background images for all featured items */}
+            <div
+              className="absolute inset-0 z-0 overflow-hidden"
+              aria-hidden="true"
+            >
+              {featured.map((item, idx) => {
+                const isActive = idx === featureIndex % featured.length;
+                if (!item.image) return null;
+                return (
+                  <div
+                    key={item.id}
+                    className={`absolute inset-0 transition-all duration-1000 ease-out ${
+                      isActive
+                        ? "z-[1] scale-100 opacity-100"
+                        : "pointer-events-none z-0 scale-105 opacity-0"
+                    }`}
+                  >
+                    <StorageImage
+                      src={item.image}
+                      alt=""
+                      fill
+                      priority={idx === 0}
+                      sizes="100vw"
+                      className="object-cover object-center"
                     />
-                    <span>{timeAgo(activeFeature.created_at)}</span>
+                  </div>
+                );
+              })}
+              <div className="absolute inset-0 z-[2] bg-[var(--overlay-ink-60)]" />
+            </div>
+
+            <div className="relative z-10 flex h-full w-full flex-col justify-between gap-8 p-8 md:p-10 lg:flex-row lg:items-center lg:p-12">
+              <div className="flex max-w-xl flex-1 flex-col justify-between self-stretch text-[var(--color-pure-white)]">
+                <div key={activeFeature.id} className="animate-calm-fade">
+                  <div>
+                    <div className="text-[13px] font-medium leading-tight tracking-wide text-[var(--ink-on-dark-95)]">
+                      Featured find ·{" "}
+                      {activeFeature.category ?? "Recoverable item"}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[var(--ink-on-dark-85)]">
+                      <ConditionBadge
+                        value={activeFeature.condition}
+                        className="border-[var(--overlay-paper-border-20)] bg-[var(--overlay-paper-10)] text-[var(--color-pure-white)]"
+                      />
+                      <span>{timeAgo(activeFeature.created_at)}</span>
+                    </div>
+                  </div>
+                  <div className="my-6 flex min-h-[140px] flex-col justify-center sm:min-h-[155px] md:my-8">
+                    <p className="font-brand-serif line-clamp-2 text-3xl font-bold leading-tight tracking-tight text-[var(--color-pure-white)] sm:line-clamp-3 sm:text-4xl md:text-5xl lg:text-5xl">
+                      {activeFeature.title}
+                    </p>
+                    <p className="font-sans tabular mt-3 text-xl font-normal tracking-wide text-[var(--ink-on-dark-95)] sm:text-2xl">
+                      {pricingLabel(
+                        activeFeature.pricing_type,
+                        activeFeature.price,
+                      )}
+                      <span className="ml-2 text-sm text-[var(--ink-on-dark-90)]">
+                        {activeFeature.area
+                          ? `${activeFeature.area}, Abuja`
+                          : activeFeature.city}
+                      </span>
+                    </p>
                   </div>
                 </div>
-                <div className="my-10 md:my-12">
-                  <p className="font-brand-serif text-4xl font-bold leading-none tracking-tight text-[var(--color-pure-white)] sm:text-5xl md:text-6xl">
-                    {activeFeature.title}
-                  </p>
-                  <p className="font-sans tabular mt-3 text-xl font-normal tracking-wide text-[var(--ink-on-dark-95)] sm:text-2xl">
-                    {pricingLabel(
-                      activeFeature.pricing_type,
-                      activeFeature.price,
-                    )}
-                    <span className="ml-2 text-sm text-[var(--ink-on-dark-90)]">
-                      {activeFeature.area
-                        ? `${activeFeature.area}, Abuja`
-                        : activeFeature.city}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
                   <Link
                     href={`/marketplace/listing/${activeFeature.id}`}
                     className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-shop-violet)] px-6 py-2.5 text-[13px] font-semibold tracking-tight text-[var(--color-pure-white)] transition-opacity duration-200 hover:opacity-90"
@@ -1096,7 +1203,11 @@ export function ShopLandingPage({
                           aria-selected={i === featureIndex % featured.length}
                           aria-label={`Show featured find ${i + 1}`}
                           onClick={() => setFeatureIndex(i)}
-                          className={`h-1.5 rounded-full ${i === featureIndex % featured.length ? "w-6 bg-[var(--overlay-paper-90)]" : "w-1.5 bg-[var(--overlay-paper-40)]"}`}
+                          className={`h-1.5 cursor-pointer rounded-full transition-all duration-500 ease-out ${
+                            i === featureIndex % featured.length
+                              ? "w-6 bg-[var(--overlay-paper-90)]"
+                              : "w-1.5 bg-[var(--overlay-paper-40)] hover:bg-[var(--overlay-paper-90)]"
+                          }`}
                         />
                       ))}
                     </div>
@@ -1104,12 +1215,12 @@ export function ShopLandingPage({
                 </div>
               </div>
               {heroGrid.length > 0 && (
-                <div className="grid w-full shrink-0 grid-cols-2 gap-3 lg:w-[460px] xl:w-[490px]">
+                <div className="grid w-full shrink-0 grid-cols-2 gap-3 lg:w-[460px]">
                   {heroGrid.slice(0, 4).map((item) => (
                     <Link
                       key={item.id}
                       href={`/marketplace/listing/${item.id}`}
-                      className="group relative aspect-[4/4.5] overflow-hidden rounded-[20px] bg-neutral-800 text-left"
+                      className="group relative h-[155px] w-full shrink-0 overflow-hidden rounded-[20px] bg-neutral-800 text-left sm:h-[180px] lg:h-[185px] lg:w-[224px]"
                       aria-label={`View ${item.title}`}
                     >
                       {item.image ? (
@@ -1117,7 +1228,7 @@ export function ShopLandingPage({
                           src={item.image}
                           alt={item.title}
                           fill
-                          sizes="(min-width: 1024px) 230px, 50vw"
+                          sizes="(min-width: 1024px) 224px, 50vw"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
@@ -1247,48 +1358,50 @@ export function ShopLandingPage({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {curated.map((item) => {
                 return (
                   <Link
                     key={item.id}
                     href={`/marketplace/listing/${item.id}`}
                     aria-label={`View ${item.title}`}
-                    className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5"
+                    className="shop-card group flex cursor-pointer flex-col p-2 sm:p-2.5 transition-all hover:-translate-y-0.5"
                   >
-                    <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-neutral-100">
+                    <div className="relative aspect-square w-full overflow-hidden rounded-[18px] sm:rounded-[20px] bg-neutral-100">
                       {item.image ? (
                         <Image
                           src={item.image}
                           alt={item.title}
                           fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                           loading="lazy"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <span className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">
+                        <span className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--color-muted-gray)] sm:p-4">
                           No photo provided
                         </span>
                       )}
-                      <span className="absolute bottom-2 left-2 rounded-full bg-[var(--overlay-paper-95)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink-black)]">
+                      <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-[var(--overlay-paper-95)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-ink-black)] sm:text-[11px]">
                         {item.category ?? "Recoverable item"}
                       </span>
                     </div>
-                    <div className="px-1.5 pb-1 pt-2.5">
+                    <div className="px-1 pb-1 pt-2 sm:px-1.5 sm:pt-2.5">
                       <h3 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
                         {item.title}
                       </h3>
-                      <div className="mt-1.5 flex items-center justify-between">
-                        <span className="font-sans tabular text-[14px] font-semibold tracking-tight text-[var(--color-ink-black)]">
+                      <div className="mt-1 flex flex-wrap items-center justify-between gap-1 sm:mt-1.5">
+                        <span className="font-sans tabular text-[13px] font-semibold tracking-tight text-[var(--color-ink-black)] sm:text-[14px]">
                           {pricingLabel(item.pricing_type, item.price)}
                         </span>
-                        <ConditionBadge value={item.condition} />
+                        <ConditionBadge value={item.condition} className="text-[10px] sm:text-xs" />
                       </div>
                       <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--color-muted-gray)]">
-                        <MapPinIcon className="h-3 w-3" aria-hidden="true" />
-                        {item.area ? `${item.area}, Abuja` : item.city} ·{" "}
-                        {timeAgo(item.created_at)}
+                        <MapPinIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+                        <span className="truncate">
+                          {item.area ? `${item.area}, Abuja` : item.city} ·{" "}
+                          {timeAgo(item.created_at)}
+                        </span>
                       </p>
                     </div>
                   </Link>
@@ -1430,48 +1543,50 @@ export function ShopLandingPage({
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {filteredListings.map((item) => {
                 return (
                   <Link
                     key={item.id}
                     href={`/marketplace/listing/${item.id}`}
                     aria-label={`View ${item.title}`}
-                    className="shop-card group flex cursor-pointer flex-col p-2.5 transition-all hover:-translate-y-0.5"
+                    className="shop-card group flex cursor-pointer flex-col p-2 sm:p-2.5 transition-all hover:-translate-y-0.5"
                   >
-                    <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-neutral-100">
+                    <div className="relative aspect-square w-full overflow-hidden rounded-[18px] sm:rounded-[20px] bg-neutral-100">
                       {item.image ? (
                         <Image
                           src={item.image}
                           alt={item.title}
                           fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                           loading="lazy"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <span className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--color-muted-gray)]">
+                        <span className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--color-muted-gray)] sm:p-4">
                           No photo provided
                         </span>
                       )}
-                      <span className="absolute bottom-2 left-2 rounded-full bg-[var(--overlay-paper-95)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-ink-black)]">
+                      <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-[var(--overlay-paper-95)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-ink-black)] sm:text-[11px]">
                         {item.category ?? "Recoverable item"}
                       </span>
                     </div>
-                    <div className="px-1.5 pb-1 pt-2.5">
+                    <div className="px-1 pb-1 pt-2 sm:px-1.5 sm:pt-2.5">
                       <h3 className="truncate text-[13px] font-semibold text-[var(--color-ink-black)]">
                         {item.title}
                       </h3>
-                      <div className="mt-1.5 flex items-center justify-between">
-                        <span className="font-sans tabular text-[14px] font-semibold tracking-tight text-[var(--color-ink-black)]">
+                      <div className="mt-1 flex flex-wrap items-center justify-between gap-1 sm:mt-1.5">
+                        <span className="font-sans tabular text-[13px] font-semibold tracking-tight text-[var(--color-ink-black)] sm:text-[14px]">
                           {pricingLabel(item.pricing_type, item.price)}
                         </span>
-                        <ConditionBadge value={item.condition} />
+                        <ConditionBadge value={item.condition} className="text-[10px] sm:text-xs" />
                       </div>
                       <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--color-muted-gray)]">
-                        <MapPinIcon className="h-3 w-3" aria-hidden="true" />
-                        {item.area ? `${item.area}, Abuja` : item.city} ·{" "}
-                        {timeAgo(item.created_at)}
+                        <MapPinIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+                        <span className="truncate">
+                          {item.area ? `${item.area}, Abuja` : item.city} ·{" "}
+                          {timeAgo(item.created_at)}
+                        </span>
                       </p>
                     </div>
                   </Link>

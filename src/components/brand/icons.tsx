@@ -59,6 +59,29 @@ export function GridIcon({ className }: P): ReactElement {
   );
 }
 
+export function MarketplaceIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path d="M3 9 5 4h14l2 5" />
+      <path d="M4 9v10.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V9" />
+      <path d="M3 9h18" stroke={ACCENT} strokeWidth={2} />
+      <path d="M9.5 21v-6a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6" />
+    </Svg>
+  );
+}
+
+export const StoreIcon = MarketplaceIcon;
+
+export function InfoIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r={8} />
+      <path d="M12 11.5v4.5" />
+      <AccentDot cx={12} cy={8} r={1.3} />
+    </Svg>
+  );
+}
+
 export function TagIcon({ className }: P): ReactElement {
   return (
     <Svg className={className}>

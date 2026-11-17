@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export const mobileNavItemClass =
-  "flex min-h-12 flex-1 basis-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[14px] px-1 text-xs font-medium text-[var(--color-ash-veil)] transition-colors duration-200 hover:text-[var(--color-ink-black)] data-[active=true]:bg-[var(--color-canvas-mist)] data-[active=true]:text-[var(--color-ink-black)]";
+  "flex min-h-12 flex-1 basis-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[14px] px-1 text-xs font-medium text-[var(--color-ash-veil)] transition-colors duration-200 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)] data-[active=true]:bg-[var(--color-canvas-mist)] data-[active=true]:text-[var(--color-ink-black)]";
+
+export const railItemClass =
+  "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[var(--color-muted-gray)] transition-colors duration-200 hover:bg-[var(--color-canvas-mist)] hover:text-[var(--color-ink-black)] data-[active=true]:bg-[var(--color-canvas-mist)] data-[active=true]:text-[var(--color-ink-black)]";
 
 export function MobileQuickNav({ children }: { children: ReactNode }) {
   return (

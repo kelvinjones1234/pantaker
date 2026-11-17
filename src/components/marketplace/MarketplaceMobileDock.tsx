@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GridIcon, HomeIcon, TagIcon, WrenchIcon } from "@/components/brand/icons";
+import { HomeIcon, InfoIcon, MarketplaceIcon, TagIcon } from "@/components/brand/icons";
 import {
   MobileProfileLink,
   MobileQuickNav,
@@ -18,28 +18,36 @@ export function MarketplaceMobileDock({
   const pathname = usePathname();
   if (pathname.startsWith("/marketplace/listing/")) return null;
 
+  const isMarketActive =
+    pathname === "/marketplace" || pathname.startsWith("/marketplace/");
+
   return (
     <MobileQuickNav>
-      <Link href="/" aria-label="Pantaker home" className={mobileNavItemClass}>
+      <Link
+        href="/"
+        aria-label="Pantaker home"
+        data-active={pathname === "/"}
+        className={mobileNavItemClass}
+      >
         <HomeIcon className="h-5 w-5" />
         <span>Home</span>
       </Link>
       <Link
         href="/marketplace"
         aria-label="Browse marketplace"
-        aria-current="page"
-        data-active="true"
+        aria-current={isMarketActive ? "page" : undefined}
+        data-active={isMarketActive}
         className={mobileNavItemClass}
       >
-        <GridIcon className="h-5 w-5" />
-        <span>Shop</span>
+        <MarketplaceIcon className="h-5 w-5" />
+        <span>Market</span>
       </Link>
       <Link href="/#feed" aria-label="Marketplace feed" className={mobileNavItemClass}>
         <TagIcon className="h-5 w-5" />
         <span>Feed</span>
       </Link>
       <Link href="/#how" aria-label="How it works" className={mobileNavItemClass}>
-        <WrenchIcon className="h-5 w-5" />
+        <InfoIcon className="h-5 w-5" />
         <span>How</span>
       </Link>
       <MobileProfileLink user={user} />

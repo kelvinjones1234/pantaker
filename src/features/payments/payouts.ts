@@ -2,13 +2,22 @@ import type { BachsPayoutDestination } from "@/lib/bachs/client";
 import { listPayoutDestinations } from "@/lib/bachs/client";
 import { getPrisma } from "@/lib/prisma";
 
+export type SellerDestinationsResult =
+  | { ok: true; destinations: BachsPayoutDestination[] }
+  | { ok: false; destinations: []; error: string };
+
 export async function loadSellerDestinations(
   accountId: string,
-): Promise<BachsPayoutDestination[]> {
+): Promise<SellerDestinationsResult> {
   try {
-    return await listPayoutDestinations(accountId);
-  } catch {
-    return [];
+    return { ok: true, destinations: await listPayoutDestinations(accountId) };
+  } catch (error) {
+    console.error("Could not load Bachs payout destinations.", error);
+    return {
+      ok: false,
+      destinations: [],
+      error: "We could not reach Bachs to load your bank account. Refresh the page to try again.",
+    };
   }
 }
 

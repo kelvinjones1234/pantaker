@@ -154,8 +154,8 @@ export function ListingsBrowser({
   const areaLabel = state.area === ALL_ABUJA ? "Abuja" : `${state.area}, Abuja`;
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
-      <div className="lg:flex lg:gap-8">
+    <div className="mx-auto w-full max-w-[1072px] px-4 py-6 sm:px-6 sm:py-8">
+      <div className="lg:flex lg:gap-6">
         <aside className="hidden lg:block lg:w-56 lg:shrink-0">
           <div className="sticky top-24">
             <CategorySidebar
