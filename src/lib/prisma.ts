@@ -18,7 +18,14 @@ function createPrismaClient(): PrismaClient {
       "DATABASE_URL is not set. Add your Postgres connection string to .env.",
     );
   }
-  const adapter = new PrismaPg({ connectionString });
+  // Each serverless instance owns its own pool. Keep it small so many warm
+  // instances don't exhaust the Supabase pooler's client limit (EMAXCONNSESSION).
+  // Use the transaction pooler (port 6543) for DATABASE_URL on Vercel.
+  const adapter = new PrismaPg({
+    connectionString,
+    max: Number(process.env.DATABASE_POOL_MAX ?? 1),
+    idleTimeoutMillis: 10_000,
+  });
   return new PrismaClient({ adapter });
 }
 
