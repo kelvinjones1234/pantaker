@@ -18,7 +18,7 @@ export function SellerMobileNav({ unreadMessages = 0 }: { unreadMessages?: numbe
   return (
     <nav
       aria-label="Dashboard"
-      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-1 bg-[var(--shop-glass)] px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-1.5 backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-1 overflow-x-auto overscroll-x-contain bg-[var(--shop-glass)] px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden"
     >
       {sellerNavForMobile().map((item) => {
         const active = isSellerNavActive(pathname, item);
@@ -29,7 +29,7 @@ export function SellerMobileNav({ unreadMessages = 0 }: { unreadMessages?: numbe
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex min-h-12 flex-1 basis-0 flex-col items-center justify-center gap-1 rounded-[16px] px-1 py-1.5 text-xs font-medium transition-colors duration-150",
+              "flex min-h-12 min-w-[4.5rem] shrink-0 flex-col items-center justify-center gap-1 rounded-[16px] px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-150",
               active
                 ? "bg-[var(--color-canvas-mist)] text-[var(--color-ink-black)]"
                 : "text-[var(--color-ash-veil)] hover:bg-[var(--color-canvas-mist)]",
