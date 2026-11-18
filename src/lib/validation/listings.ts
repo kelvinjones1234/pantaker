@@ -55,11 +55,14 @@ export const createListingSchema = z
   .object({
     title: z.string().trim().min(6, "Give your listing a clear title (min 6 characters).").max(120),
     category_id: z.string().uuid("Choose a category."),
+    // Optional: a blank description is stored as "" (the column default).
     description: z
       .string()
       .trim()
-      .min(20, "Describe the item, its faults, and what's included (min 20 characters).")
-      .max(4000),
+      .max(4000)
+      .nullable()
+      .optional()
+      .transform((value) => value ?? ""),
     condition: conditionSchema,
     pricing_type: pricingTypeSchema,
     // Whole naira only — money is never handled as a floating-point value.

@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { uploadLimits } from "@/config/site";
-import { ImagePlusIcon, PlusIcon, TrashIcon } from "@/components/brand/icons";
+import { ImagePlusIcon, PlusIcon, StarIcon, TrashIcon } from "@/components/brand/icons";
 import {
   deleteUploadedImage,
   uploadImageFile,
@@ -154,9 +154,11 @@ function CanvasTile({
             <button
               type="button"
               onClick={onMakeCover}
-              className="cursor-pointer rounded-full bg-[var(--overlay-paper-95)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-ink-black)] transition-opacity duration-150 hover:opacity-90"
+              aria-label={`Set ${image.name} as cover`}
+              title="Set as cover"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[var(--overlay-paper-95)] text-[var(--color-ink-black)] transition-opacity duration-150 hover:opacity-90"
             >
-              Set cover
+              <StarIcon className="h-3.5 w-3.5" />
             </button>
           )}
           <button

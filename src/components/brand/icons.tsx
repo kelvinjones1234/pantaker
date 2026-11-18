@@ -273,6 +273,15 @@ export function ImagePlusIcon({ className }: P): ReactElement {
   );
 }
 
+export function StarIcon({ className }: P): ReactElement {
+  return (
+    <Svg className={className}>
+      <path d="M12 4.5l2.2 4.5 4.9.7-3.5 3.4.8 4.9L12 15.6l-4.4 2.4.8-4.9-3.5-3.4 4.9-.7z" />
+      <AccentDot cx={12} cy={11} r={1.4} />
+    </Svg>
+  );
+}
+
 export function TrashIcon({ className }: P): ReactElement {
   return (
     <Svg className={className}>

@@ -415,7 +415,7 @@ export function ListingForm({
               className="block text-xs font-semibold text-[var(--color-ink-black)]"
             >
               Description{" "}
-              <span className="text-[var(--color-shop-violet)]">*</span>
+              <span className="font-normal text-[var(--color-muted-gray)]">(optional)</span>
             </label>
             <span className="text-[11px] tabular text-[var(--color-muted-gray)]">
               {description.length}/4000
@@ -424,13 +424,12 @@ export function ListingForm({
           <textarea
             id={descriptionId}
             name="description"
-            required
             rows={4}
             maxLength={4000}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             aria-invalid={Boolean(fieldErrors.description)}
-            placeholder="Describe quantity, grade, any faults, and what's included (min 20 characters)…"
+            placeholder="Describe quantity, grade, any faults, and what's included…"
             className={textareaClass}
           />
           <FieldError messages={fieldErrors.description} />
